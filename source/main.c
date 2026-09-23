@@ -20,7 +20,9 @@ const char LOREM[] = "Lorem ipsum dolor sit amet consectetur adipiscing elit, se
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 static inline int printMatch(const char *const match, const size_t len, const char *const col__) {
-	return printf("\33[%sm%.*s%s", col__, (int)len, match, "\33[m");
+	printf("\33[%sm%.*s%s", col__, (int)len, match, "\33[m");
+	fflush(stdout);
+	return (int)len;
 }
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
@@ -32,15 +34,21 @@ int main(const int argc, const char *const argv[]) {
 	const str  pat2 = "lo"; const size_t pat2len = sizeof(pat2) - 1;
 
 	for (const char *chr = LOREM; *chr != '\0'; chr++) {
-		if (memcmp(chr, pat2, pat2len) == 0) {
-			printMatch(chr, pat2len, "33");
+		if (strncmp(chr, pat2, pat2len) == 0) {
+			int len = printMatch(chr, pat2len, "33") - 1;
 
-		} else if (*chr == pat1) {
-			printMatch(chrToStr(*chr), 1, "31");
+			while (*chr != '\0' && len > 0) chr++, len--;
+			if (*chr == '\0') break;
 
-		} else {
-			putchar(*chr);
+			continue;
 		}
+
+		if (*chr == pat1) {
+			printMatch(chrToStr(*chr), 1, "31");
+			continue;
+		}
+
+		putchar(*chr);
 	}
 
 	putchar('\n');
