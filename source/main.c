@@ -26,7 +26,7 @@ const char INPUT[] =
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 int main(const int argc, const char *const argv[]) {
-	const regex_t regex = rx_compile(REGEX, RX_FLAGS[RXF_GLOBAL].bf | RX_FLAGS[RXF_MULTILINE].bf);
+	const rxobj_t regex = rx_compile(REGEX, RX_FLAGS[RXF_GLOBAL].bf | RX_FLAGS[RXF_MULTILINE].bf);
 
 	for (const char *c = INPUT; *c != '\0'; c++) putchar(*c);
 

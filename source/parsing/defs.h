@@ -12,8 +12,8 @@
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-static inline regex_t rx_init(const char *const string, const uint64_t flags);
-static inline void rx_tokenise(const regex_t rx_obj);
+static inline rxobj_t rx_init(const char *const string, const uint64_t flags);
+static inline void rx_tokenise(const rxobj_t rx_obj);
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 

@@ -13,8 +13,8 @@
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-regex_t rx_compile(const char *const string, const uint64_t flags) {
-	const regex_t rx_obj = rx_init(string, flags);
+rxobj_t rx_compile(const char *const string, const uint64_t flags) {
+	const rxobj_t rx_obj = rx_init(string, flags);
 	rx_tokenise(rx_obj);
 
 	return rx_obj;
@@ -23,8 +23,8 @@ regex_t rx_compile(const char *const string, const uint64_t flags) {
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-static inline regex_t rx_init(const char *const string, const uint64_t flags) {
-	const regex_t rx_obj = calloc(1, sizeof(struct rx__regex));
+static inline rxobj_t rx_init(const char *const string, const uint64_t flags) {
+	const rxobj_t rx_obj = calloc(1, sizeof(struct rx__regex));
 	const size_t str_len = strlen(string) + 1;
 
 	*rx_obj = (struct rx__regex){
@@ -38,7 +38,7 @@ static inline regex_t rx_init(const char *const string, const uint64_t flags) {
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-static inline void rx_tokenise(const regex_t rx_obj) {
+static inline void rx_tokenise(const rxobj_t rx_obj) {
 	for (const char *chr = rx_obj->string; *chr != '\0'; chr++) {
 		putchar(*chr);
 	}
