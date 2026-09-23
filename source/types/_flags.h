@@ -18,6 +18,10 @@ enum RxFlag {
 	RXF_DOLLAREND	= 'D', RXF_D = 'D', /** Match `$` only at string end. */
 	RXF_DUPGROUPS	= 'J', RXF_J = 'J', /** Allow duplicate group names. */
 
+	RXF_FIXEDSTR	= 'F', RXF_F = 'F', /** Treat the whole pattern as a literal. */
+	RXF_INVMATCH	= 'V', RXF_V = 'V', /** Return everything that doesn't match. */
+	RXF_WORDONLY	= 'w', RXF_w = 'w', /** Only match entire words. */
+
 	RXF_STICKY		= 'y', RXF_y = 'y', /** ? Perform a "sticky" search. */
 	RXF_ANCHOR		= 'A', RXF_A = 'A', /** ? Anchor at search start. */
 	RXF_LAZYQUANT	= 'U', RXF_U = 'U', /** ? Lazy quantifiers. */
