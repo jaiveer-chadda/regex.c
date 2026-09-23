@@ -1,18 +1,20 @@
 # .gitignore
 # ‾‾‾‾‾‾‾‾‾‾
 
-# Project Files
+## —— Project Files —— ##
 out/
 build/
 
-# System Files
+## —— System Files ——— ##
 .DS_Store
 Icon?
 
-# IDEs
+## —— IDEs ——————————— ##
 .idea/
 .vscode/
 
-# Other
+## —— Other —————————— ##
 ~$*
 *_temp*
+# all dotfiles not in the root
+*/**/.*
