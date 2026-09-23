@@ -3,36 +3,30 @@
 #ifndef CHARS_H_
 #define CHARS_H_
 
-/**
- * @enum RxChar
- * @brief An enum holding every semantically-significant regex character.
- */
-enum RxChar {
-	RXC_INVALID	= -1,	/** An invalid character. */
-	RXC_LITERAL	=  0,	/** /`a`/ – A literal character. */
+#define RX__CHAR_TABLE \
+	X(LITERAL,  0  )				/** /`a`/				– A literal character.								*/ \
+	X(INVALID, -1  )				/**						– An invalid character.								*/ \
+	X(SPACE	 , ' ' )				/** /` `/				– Ignored in extended mode.							*/ \
+	X(FSLASH , '/' )				/** `/m/r/f`			– Delimit a regex.									*/ \
+	X(BSLASH , '\\')				/** /`\w`/				– Escape the next character.						*/ \
+	X(DOT	 , '.' )				/** /`.`/				– Match one of any character.						*/ \
+	X(STAR	 , '*' )				/** /`a*`/				– Match zero or more of a pattern.					*/ \
+	X(PLUS	 , '+' )				/** /`a+`/				– Match one or more of a pattern.					*/ \
+	X(HASH	 , '#' )				/** /`# ...`/, /`(?#)`/	– Begin a line comment, or start a comment group.	*/ \
+	X(CARET	 , '^' )				/** /`\n^`/, /`[^...]`/	– Assert start of a line/str, or negate a literal.	*/ \
+	X(COMMA	 , ',' )				/** /`{x,y}`/			– Separate the arguments of a ranged quantifier.	*/ \
+	X(HYPHEN , '-' )				/** /`[a-z]`/			– Define a range of chars in a literal.				*/ \
+	X(DOLLAR , '$' )				/** /`$\n`/				– Assert the end of a line/string.					*/ \
+	X(LINEBAR, '|' )				/** /`a|b`/				– Match one pattern or another.						*/ \
+	X(NEWLINE, '\n')				/** /`↩`/				– Mark the end of the line.							*/ \
+	X(LPAREN , '(' ) X(RPAREN, ')')	/** /`(...)`/			– Define a group construct.							*/ \
+	X(LBRACK , '[' ) X(RBRACK, ']')	/** /`[abc]`/			– Define a literal construct.						*/ \
+	X(LBRACE , '{' ) X(RBRACE, '}')	/** /`a{1,2}`/			– Define a range quantifier.						*/ \
+	X(QUMARK , '?' ) X(EXMARK, '!') X(EQUALS , '=' ) X(L_THAN, '<') \
+/**/
 
-	RXC_SPACE	= ' ',	/** /` `/ – Ignored. */
-
-	RXC_FSLASH	= '/',	/** `/m/r/f` – Delimit a regex. */
-	RXC_BSLASH	= '\\',	/** /`\w`/ – Escape the next character. */
-
-	RXC_DOT		= '.',	/** /`.`/ – Match one of any character. */
-	RXC_STAR	= '*',	/** /`a*`/ – Match zero or more of a pattern. */
-	RXC_PLUS	= '+',	/** /`a+`/ – Match one or more of a pattern. */
-	RXC_HASH	= '#',	/** /`# comment`/, /`(?#...)`/ – Begin an EoL comment, or create a comment group construct. */
-	RXC_COMMA	= ',',	/** /`{x,y}`/ – Separate the arguments of a ranged quantifier. */
-	RXC_CARET	= '^',	/** /`\n^`/, /`[^...]`/ – Assert the start of a line/string, or negate a literal construct. */
-	RXC_HYPHEN	= '-', /** /`[a-z]`/ – Define a range of characters in a literal construct. */
-	RXC_DOLLAR	= '$',	/** /`$\n`/ – Assert the end of a line/string. */
-	RXC_LINEBAR	= '|',	/** /`a|b`/ – Match one pattern or another. */
-	RXC_NEWLINE	= '\n',	/** /`↩`/ – Mark the end of the line. */
-
-	RXC_LPAREN	= '(', RXC_RPAREN = ')', /** /`(...)`/  – Define a group construct. */
-	RXC_LBRACK	= '[', RXC_RBRACK = ']', /** /`[abc]`/  – Define a literal construct. */
-	RXC_LBRACE	= '{', RXC_RBRACE = '}', /** /`a{1,2}`/ – Define a range quantifier. */
-
-	RXC_QUMARK	= '?', RXC_EXMARK = '!',
-	RXC_EQUALS	= '=', RXC_L_THAN = '<',
-};
+#define X(name, chr) RXC_##name,
+enum RxChar { RX__CHAR_TABLE RXC_COUNT };
+#undef X
 
 #endif /* !CHARS_H_ */
