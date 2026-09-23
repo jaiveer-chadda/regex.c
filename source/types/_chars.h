@@ -16,8 +16,9 @@ enum RxChar {
 	RXC_STAR	= '*',	/** /`a*`/ – Match zero or more of a pattern. */
 	RXC_PLUS	= '+',	/** /`a+`/ – Match one or more of a pattern. */
 	RXC_HASH	= '#',	/** /`# comment`/, /`(?#...)`/ – Begin an EoL comment, or create a comment group construct. */
-	RXC_COMMA	= ',',	/** /`{x,y}`/ – Separate a ranged quantifier's arguments. */
+	RXC_COMMA	= ',',	/** /`{x,y}`/ – Separate the arguments of a ranged quantifier. */
 	RXC_CARET	= '^',	/** /`\n^`/, /`[^...]`/ – Assert the start of a line/string, or negate a literal construct. */
+	RXC_HYPHEN	= '-', /** /`[a-z]`/ – Define a range of characters in a literal construct. */
 	RXC_DOLLAR	= '$',	/** /`$\n`/ – Assert the end of a line/string. */
 	RXC_LINEBAR	= '|',	/** /`a|b`/ – Match one pattern or another. */
 	RXC_NEWLINE	= '\n',	/** /`↩`/ – Mark the end of the line. */
@@ -26,13 +27,8 @@ enum RxChar {
 	RXC_LBRACK	= '[', RXC_RBRACK = ']', /** /`[abc]`/  – Define a literal construct. */
 	RXC_LBRACE	= '{', RXC_RBRACE = '}', /** /`a{1,2}`/ – Define a range quantifier. */
 
-	RXC_QUMARK	= '?', /** /`(?:`/ */
-	RXC_EXMARK	= '!', /** /`(?!`/ */
-
-	RXC_EQUALS	= '=', /** /`(?=`/ */
-	RXC_L_THAN	= '<', /** /`(?<=`/ */
-
-	RXC_HYPHEN	= '-', /** /`[a-z]`/ – Define a range of characters in a literal construct. */
+	RXC_QUMARK	= '?', RXC_EXMARK = '!',
+	RXC_EQUALS	= '=', RXC_L_THAN = '<',
 };
 
 #endif /* !CHARS_H_ */
