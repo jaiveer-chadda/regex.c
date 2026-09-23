@@ -3,6 +3,10 @@
 #ifndef CHARS_H_
 #define CHARS_H_
 
+/**
+ * @enum RxChar
+ * @brief An enum holding every semantically-significant regex character.
+ */
 enum RxChar {
 	RXC_INVALID	= -1,	/** An invalid character. */
 	RXC_LITERAL	=  0,	/** /`a`/ – A literal character. */

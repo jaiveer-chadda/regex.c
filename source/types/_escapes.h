@@ -3,6 +3,10 @@
 #ifndef ESCAPES_H_
 #define ESCAPES_H_
 
+/**
+ * @enum RxEscape
+ * @brief An enum holding every character that can appear after a backslash.
+ */
 enum RxEscape {
 
 	/* —— C Escape Sequences ———————————————————————————————— */

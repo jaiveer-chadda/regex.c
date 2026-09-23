@@ -3,6 +3,10 @@
 #ifndef FLAGS_H_
 #define FLAGS_H_
 
+/**
+ * @enum RxFlag
+ * @brief An enum holding all the flags that could be applied to a regex search.
+ */
 enum RxFlag {
 
 	/* —— General ——————————————————————————————————————————— */
