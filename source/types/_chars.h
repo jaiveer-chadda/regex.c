@@ -22,7 +22,7 @@
 	X(LPAREN , '(' ) X(RPAREN, ')')	/** /`(...)`/			– Define a group construct.							*/ \
 	X(LBRACK , '[' ) X(RBRACK, ']')	/** /`[abc]`/			– Define a literal construct.						*/ \
 	X(LBRACE , '{' ) X(RBRACE, '}')	/** /`a{1,2}`/			– Define a range quantifier.						*/ \
-	X(QUMARK , '?' ) X(EXMARK, '!') X(EQUALS , '=' ) X(L_THAN, '<') \
+	X(QUMARK , '?' ) X(EXMARK, '!') X(EQUALS, '=' ) X(L_THAN, '<') \
 /**/
 
 #define X(name, chr) RXC_##name,

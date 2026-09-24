@@ -19,7 +19,6 @@
 	X(NOLINEFD	, 'N') /** `\N` = `[^\n]` – Match anything except a `\n` line feed.								*/	\
 	X(NOVERTAB	, 'V') /** `\V` = `[^\v]` – Match anything except a `\v` vertical tab.							*/	\
 	X(NOFORMFD	, 'F') /** `\F` = `[^\f]` – Match anything except a `\f` form feed.								*/	\
-	X(NOESCAPE	, 'E') /** `\E` = `[^\e]` – Match anything except an`\e` escape character.						*/	\
 	/* —— Groups / Backreferencing ———————————————————————————————————————————————————————————————————————————— */	\
 	/** `\1 → \9` – A backreference - match the `1ˢᵗ` through `9ᵗʰ` capture group, respectively.				*/	\
 	X(1,'1') X(2,'2') X(3,'3') X(4,'4') X(5,'5') X(6,'6') X(7,'7') X(8,'8') X(9,'9')								\
