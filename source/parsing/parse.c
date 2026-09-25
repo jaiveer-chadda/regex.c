@@ -173,6 +173,15 @@ static inline token_t rx_tokenise_escape(const char **const chr) {
 		case RXX_BEGQUOTE: case RXX_ENDQUOTE:
 			RETURN_TOKEN(RXT_ANCHOR, **chr);
 
+		// map control characters (usually written as `^Y`) from their `\cY` notation, to their literal interpretations
+		case RXX_CONTROL: // \c
+			(*chr)++; // increment the char pointer, so we're looking at the character after `\c`
+			// make sure the control character escape is a valid one (`?`, or between `@` and `_`)
+			if (!(**chr == '?' || ('@' <= **chr && **chr <= '_'))) error_invalid_escape();
+			// `\c?` / `^?` (delete) is a special exception, so hardcode that character in
+			//	for the rest of the escapes, they're defined sequentially, starting at `^@` for the literal `\0`
+			RETURN_TOKEN(RXT_LITERAL, **chr == '?' ? '\x7f' : **chr - '@');
+
 		// the `\x` escape is a multi-character escape, so needs to be specially parsed.
 		case RXX_HEXESC: // \x
 			wchar_t hex_buf = 0;
@@ -184,7 +193,7 @@ static inline token_t rx_tokenise_escape(const char **const chr) {
 			if (is_long) (*chr)++; // discard the opening brace
 
 			while (num_iter++ < max_iter) {
-				++(*chr);
+				(*chr)++;
 				if		('0' <= **chr && **chr <= '9') { hex_buf = (hex_buf * 16) + ((**chr - '0')		); }
 				else if ('A' <= **chr && **chr <= 'F') { hex_buf = (hex_buf * 16) + ((**chr - 'A') + 10	); }
 				else if ('a' <= **chr && **chr <= 'f') { hex_buf = (hex_buf * 16) + ((**chr - 'a') + 10	); }
@@ -204,9 +213,8 @@ static inline token_t rx_tokenise_escape(const char **const chr) {
 			RETURN_TOKEN(RXT_LITERAL, hex_buf);
 
 		/// @todo implement
-		[[fallthrough]]; // \K \g \k \c   \p \P
-		case RXX_RESETPOS: case RXX_NTHGROUP: case RXX_NAMEDGRP: case RXX_CONTROL:
-		case RXX_PROPERTY: case RXX_NOPROPERTY:
+		[[fallthrough]]; // \K \g \k \p \P
+		case RXX_RESETPOS: case RXX_NTHGROUP: case RXX_NAMEDGRP: case RXX_PROPERTY: case RXX_NOPROPERTY:
 			RETURN_TOKEN(RXT_NOT_IMP, NA);
 
 		// if it doesn't fit any of the special cases, then just return the character after the backslash
