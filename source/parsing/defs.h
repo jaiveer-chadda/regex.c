@@ -46,6 +46,7 @@ struct rx__regex {
 	const char *string;
 	uint64_t flags;
 	token_t *tokens;
+	size_t token_count;
 };
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */

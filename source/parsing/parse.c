@@ -9,7 +9,11 @@
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
+/// Allocate `size` bytes of memory, and copy that many bytes from `src`.
 #define memdup(src, size) memcpy(malloc((size)), (src), (size))
+
+/// Approximately multiply a number by 1.5, in place.
+#define MULT_BY_1_5(var) ((var) += (var) <= 1 ? 1 : (var) >> 1)
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
@@ -29,7 +33,8 @@ static inline rxobj_t rx_init(const char *const string, const uint64_t flags) {
 	const size_t str_len = strlen(string) + 1;
 
 	*rx_obj = (struct rx__regex){
-		.tokens = malloc(str_len),
+		.token_count = 0,
+		.tokens = NULL,
 		.string = memdup(string, str_len),
 		.flags  = flags,
 	};
@@ -49,6 +54,7 @@ static inline rxobj_t rx_init(const char *const string, const uint64_t flags) {
 
 static inline void rx_tokenise(const rxobj_t rx_obj) {
 	token_t token;
+	size_t alloc_count = 0;
 
 	for (const char *chr = rx_obj->string; *chr != '\0'; chr++) {
 		int size[2] = {0};
@@ -69,8 +75,8 @@ static inline void rx_tokenise(const rxobj_t rx_obj) {
 			case '{':
 				// ( in `{a,b}`, assume for now that `a` and `b` are both in the range `[0,9]` )
 				// parse each of the integers, ignoring the comma and closing brace
-				size[0] = CHR_TO_INT(*(++chr)); assert(*(++chr) == ',');
-				size[1] = CHR_TO_INT(*(++chr)); assert(*(++chr) == '}');
+				size[0] = CHR_TO_INT(*++chr); assert(*++chr == ',');
+				size[1] = CHR_TO_INT(*++chr); assert(*++chr == '}');
 
 				token = GET_QUANT_TOKEN();
 				break;
@@ -78,7 +84,13 @@ static inline void rx_tokenise(const rxobj_t rx_obj) {
 			default: token = (token_t){ RXT_LITERAL, *chr };
 		}
 
-		(void)token;
+		// reallocate new memory as its needed
+		//	on the first iteration, `rx_obj->tokens` will be `NULL`, but `reallocf` will allocate new memory for it
+		if (rx_obj->token_count + 1 > alloc_count) {
+			rx_obj->tokens = reallocf(rx_obj->tokens, MULT_BY_1_5(alloc_count) * sizeof(token_t));
+		}
+
+		rx_obj->tokens[rx_obj->token_count++] = token;
 	}
 }
 
