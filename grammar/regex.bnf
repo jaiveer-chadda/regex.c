@@ -5,7 +5,8 @@
 
 regex		::=	'/' <pattern> '/' <replacemenet> '/' <flags>
 
-pattern		::=	( ( '.' | <LITERAL> | '\\' <ESC_CHAR> | <set> | <group> ) <quantifier>? )*
+pattern		::=	( <statement> <quantifier>? ( '|' <pattern> )? )*
+statement	::= '.' | <LITERAL> | '\\' <ESC_CHAR> | <set> | <group>
 
 group		::= '(' <group_type>? <pattern> ')'
 group_type	::= '?' ( ['=:!>|#'] | '<' ['=!'] | <flags> ':' )

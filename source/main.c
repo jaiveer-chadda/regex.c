@@ -12,7 +12,7 @@
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-const char REGEX[] = "a";
+const char REGEX[] = "[^\\]]{4,7}\\n|(?<=\\\\)ab*cd?e+[\\[\\]]";
 
 const char INPUT[] =
 	"If you may please to think I love the King, And through him what's nearest to him, which is Your "	"\n"
@@ -26,11 +26,14 @@ const char INPUT[] =
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 int main(const int argc, const char *const argv[]) {
+
+	puts(REGEX);
+
 	const rxobj_t regex = rx_compile(REGEX, RX_FLAGS[RXF_GLOBAL].bf | RX_FLAGS[RXF_MULTILINE].bf);
 
-	for (const char *c = INPUT; *c != '\0'; c++) putchar(*c);
+	// for (const char *c = INPUT; *c != '\0'; c++) putchar(*c);
+	// putchar('\n');
 
-	putchar('\n');
 	return 0;
 }
 

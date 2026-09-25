@@ -18,14 +18,28 @@ static inline void rx_tokenise(const rxobj_t rx_obj);
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 typedef enum RxTokenType {
-	RXS_LITERAL
+	RXT_LITERAL	, // 'a' 'b' 'c'
+
+	RXT_DOT		, // '.'
+	RXT_ESCAPE	, // '\X'
+
+	RXT_OR		, // '|'
+	RXT_ASSERT	, // '^' '$'
+
+	RXT_GROUP	, // '('
+	RXT_SET		, // '['
+
+	RXT_QUANT	, // '+' '*' '?' '{1,2}'
 } RxTokenType;
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
+#define NA ((any_t)0)
+typedef int64_t any_t;
+
 typedef struct rx__token {
 	RxTokenType type;
-	void *value;
+	any_t value;
 } token_t;
 
 struct rx__regex {
