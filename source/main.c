@@ -12,7 +12,7 @@
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-const char REGEX[] = "[^\\]]{4,7}\\n|(?<=\\\\)ab*cd?e+[\\[\\]]";
+const char REGEX[] = "^[-\\w]+[0-9]*@\\w+?(Mail|male)\\b(\\.[a-z]{2,4}){1,3}$";
 
 const char INPUT[] =
 	"If you may please to think I love the King, And through him what's nearest to him, which is Your "	"\n"

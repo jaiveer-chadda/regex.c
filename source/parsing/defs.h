@@ -29,19 +29,36 @@ typedef enum RxTokenType {
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
+/// Represents infinity in ranged quantifiers.
+#define INF ((int)-1)
 #define NA ((any_t)0)
+
+/* ———————————————————————————————————————————— */
+
 typedef int64_t any_t;
 
+/* ———————————————————————————————————————————— */
+
+/// @brief Generic token type.
 typedef struct rx__token {
 	RxTokenType type;
 	any_t value;
 } token_t;
 
+/* ———————————————————————————————————————————— */
+
+typedef struct {
+	int lhs, rhs;
+	bool has_qm;
+} RxQuantToken;
+
+/* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
+
 struct rx__regex {
-	const char *string;
 	uint64_t flags;
 	token_t *tokens;
 	size_t token_count;
+	const char *string;
 };
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */

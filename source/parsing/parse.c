@@ -9,14 +9,6 @@
 #include "errors/errors.h"
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
-
-/// Allocate `size` bytes of memory, and copy that many bytes from `src`.
-#define memdup(src, size) memcpy(malloc((size)), (src), (size))
-
-/// Approximately multiply a number by 1.5, in place.
-#define MULT_BY_1_5(var) ((var) += (var) <= 1 ? 1 : (var) >> 1)
-
-/* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 rxobj_t rx_compile(const char *const string, const uint64_t flags) {
@@ -28,6 +20,9 @@ rxobj_t rx_compile(const char *const string, const uint64_t flags) {
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
+
+/// Allocate `size` bytes of memory, and copy that many bytes from `src`.
+#define memdup(src, size) memcpy(malloc((size)), (src), (size))
 
 static inline rxobj_t rx_init(const char *const string, const uint64_t flags) {
 	const rxobj_t rx_obj = calloc(1, sizeof(struct rx__regex));
@@ -45,6 +40,9 @@ static inline rxobj_t rx_init(const char *const string, const uint64_t flags) {
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
+
+/// Approximately multiply a number by 1.5, in place.
+#define MULT_BY_1_5(var) ((var) += (var) <= 1 ? 1 : (var) >> 1)
 
 static inline void rx_tokenise(const rxobj_t rx_obj) {
 	size_t alloc_count = 0;
@@ -84,35 +82,56 @@ static inline token_t rx_tokenise_char(const char **const chr) {
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
+/// @returns true if the character `chr` represents a digit, and false otherwise.
+static inline bool chr_is_dig(const char chr) { return '0' <= (chr) && (chr) <= '9'; }
+
 #define CHR_TO_INT(char_) ((char_) - '0')
 
-#define PACK_INTS(i1, i2)  ((((uint64_t)(uint32_t)(i1)) << (1 << (sizeof(int32_t) + 1))) | (uint32_t)(i2))
-#define UNPACK_INTS(l)			(int32_t)((uint64_t)(l) >> (1 << (sizeof(int32_t) + 1))),	(int32_t)(l)
-
 static inline token_t rx_tokenise_quant(const char **const chr) {
-	int size[2];
+	int size[2] = {0};
 
+	// translate each of the quantifier types into their `{n,m}` equivalents
 	switch (**chr) {
-		case '?': size[0] = 0, size[1] =  1; break;
-		case '*': size[0] = 0, size[1] = -1; break;
-		case '+': size[0] = 1, size[1] = -1; break;
+		case '?': size[0] = 0, size[1] = 1	; break; // {0,1}
+		case '*': size[0] = 0, size[1] = INF; break; // {0,∞}
+		case '+': size[0] = 1, size[1] = INF; break; // {1,∞}
 
-		// ( in `{a,b}`, assume for now that `a` and `b` are both in the range `[0,9]` )
-		case '{': 
-			// parse each of the integers, ignoring the comma and closing brace
-			size[0] = CHR_TO_INT(*(++(*chr)));
-			assert(*(++(*chr)) == ',');
+		case '{':
+			// iterate through each char, adding its value to the total until we reach a non-digit
+			while (chr_is_dig(*(++(*chr)))) size[0] = (size[0] * 10) + CHR_TO_INT(**chr);
 
-			size[1] = CHR_TO_INT(*(++(*chr)));
-			assert(*(++(*chr)) == '}');
+			// if the char we ended up with is a closing brace, then we know that the quant was in the form `{n}`
+			// if the char isn't a closing brace, and is anything other than a comma, then the quant is invalid
+			// if the char _is_ a comma, and the next char after it is a `}`, then the quant was in the form `{n,}`
+			if ( **chr		== '}') { size[1] = size[0]	; (*chr)++; break;	} // {2}  -> {2,2}
+			if ( **chr		!= ',') { error_invalid_quant();				} // {ab} -> error
+			if (*(*chr + 1)	== '}') { size[1] = INF		; (*chr)++; break;	} // {2,} -> {2,∞}
 
+			// repeat the iteration again, this time for the second integer
+			while (chr_is_dig(*(++(*chr)))) size[1] = (size[1] * 10) + CHR_TO_INT(**chr);
+
+			// if the char isn't a closing brace, or if `m` is smaller than `n` (given `{n,m}`), the quant is invalid
+			if (**chr != '}' || size[0] > size[1]) error_invalid_quant();
+
+			(*chr)++; // finally, increment the char pointer so its pointing at the char after the closing brace
 			break;
 
 		default:
 			error_impossible_case();
 	}
 
-	RETURN_TOKEN(RXT_QUANT, PACK_INTS(size[0], size[1]));
+	RxQuantToken *const token = calloc(1, sizeof(RxQuantToken));
+	*token = (RxQuantToken){ .lhs = size[0], .rhs = size[1] };
+
+	// finally, check if the character after a quantifier is a question mark (i.e. the quantifier is non-greedy)
+	if (*(*chr + 1)	== '?') {
+		token->has_qm = true;
+		// if it exists, increment the char pointer past the end of the question mark
+		(*chr)++;
+	}
+
+	// store the pointer to the quant token as an `any_t` - it'll be converted back to a `RxQuantToken*` later
+	return (token_t){ RXT_QUANT, (any_t)token };
 }
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
