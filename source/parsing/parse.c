@@ -173,16 +173,16 @@ static inline token_t rx_tokenise_escape(const char **const chr) {
 		case RXX_BEGQUOTE: case RXX_ENDQUOTE:
 			RETURN_TOKEN(RXT_ANCHOR, **chr);
 
-		/// @todo implement
-		[[fallthrough]]; // \K \g \k \p \P
-		case RXX_RESETPOS: case RXX_NTHGROUP: case RXX_NAMEDGRP: case RXX_PROPERTY: case RXX_NOPROPERTY:
-			RETURN_TOKEN(RXT_NOT_IMP, NA);
-
 		case RXX_HEXESC: // \x
-			unsigned int hex_buf = 0;
+			uint16_t hex_buf = 0;
 			uint8_t iter_count = 0;
 
-			while (iter_count++ < 2) {
+			const bool is_long = *(*chr + 1) == '{';
+			const uint8_t max_iter = is_long ? 4 : 2;
+
+			if (is_long) (*chr)++; // discard the opening brace
+
+			while (iter_count++ < max_iter) {
 				++(*chr);
 				if		('0' <= **chr && **chr <= '9') { hex_buf = (hex_buf * 16) + ((**chr - '0')		); }
 				else if ('A' <= **chr && **chr <= 'F') { hex_buf = (hex_buf * 16) + ((**chr - 'A') + 10	); }
@@ -190,10 +190,22 @@ static inline token_t rx_tokenise_escape(const char **const chr) {
 				else break; // not a hex digit
 			}
 
+			// if the escape was just `\x`, without anything after it, then throw an error
 			if (iter_count == 0) error_invalid_escape();
+			if (is_long) {
+				// long escapes must end with a closing brace
+				if (**chr != '}') error_invalid_escape();
+				// if they do end with a brace, discard it
+				(*chr)++;
+			}
 
 			RETURN_TOKEN(RXT_LITERAL, hex_buf);
 			break;
+
+		/// @todo implement
+		[[fallthrough]]; // \K \g \k \p \P
+		case RXX_RESETPOS: case RXX_NTHGROUP: case RXX_NAMEDGRP: case RXX_PROPERTY: case RXX_NOPROPERTY:
+			RETURN_TOKEN(RXT_NOT_IMP, NA);
 
 		// if it doesn't fit any of the special cases, then just return the character after the backslash
 		default: RETURN_TOKEN(RXT_LITERAL, **chr);
