@@ -14,6 +14,7 @@
 	X(RETURN	, 'r') /** `\r (\x0D)` – Carriage return														*/	\
 	X(ESCAPE	, 'e') /** `\e (\x1B)` – Escape character														*/	\
 	X(HEXESC	, 'x') /** `\xYY` / `\x{YYYY}` – Match the hex digit `YY` (1-2 digits), or `YYYY` (1-6 digits).	*/	\
+	X(CONTROL	, 'c') /** `\cY` – Match the control character `Y`, with `\cY` being equivalent to `^Y`.		*/	\
 	/* —— C Escape Negation ——————————————————————————————————————————————————————————————————————————————————— */	\
 	X(NOHORTAB	, 'T') /** `\T` = `[^\t]` – Match anything except a `\t` horizontal tab.						*/	\
 	X(NOLINEFD	, 'N') /** `\N` = `[^\n]` – Match anything except a `\n` line feed.								*/	\
