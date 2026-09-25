@@ -12,11 +12,6 @@
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-static inline rxobj_t rx_init(const char *const string, const uint64_t flags);
-static inline void rx_tokenise(const rxobj_t rx_obj);
-
-/* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
-
 typedef enum RxTokenType {
 	RXT_LITERAL	, // 'a' 'b' 'c'
 
@@ -48,6 +43,12 @@ struct rx__regex {
 	token_t *tokens;
 	size_t token_count;
 };
+
+/* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
+
+static inline rxobj_t	rx_init(const char *const string, const uint64_t flags);
+static inline void		rx_tokenise(const rxobj_t rx_obj);
+static inline token_t	rx_tokenise_quant(const char **const chr);
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
