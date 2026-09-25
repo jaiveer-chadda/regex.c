@@ -44,54 +44,59 @@ static inline rxobj_t rx_init(const char *const string, const uint64_t flags) {
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-#define CHR_TO_INT(char_) ((char_) - '0')
-
-#define PACK_INTS(i1, i2)  ((((uint64_t)(uint32_t)(i1)) << (1 << (sizeof(int32_t) + 1))) | (uint32_t)(i2))
-#define UNPACK_INTS(l)			(int32_t)((uint64_t)(l) >> (1 << (sizeof(int32_t) + 1))),	(int32_t)(l)
-
 static inline void rx_tokenise(const rxobj_t rx_obj) {
-	token_t token;
 	size_t alloc_count = 0;
 
 	for (const char *chr = rx_obj->string; *chr != '\0'; chr++) {
-		switch (*chr) {
-			case '?': case '*': case '+': [[fallthrough]];
-			case '{': token = rx_tokenise_quant(&chr); break;
-
-			case '|': token = (token_t){ RXT_OR		, NA		}; break;
-			case '.': token = (token_t){ RXT_DOT	, NA		}; break;
-			case '^': token = (token_t){ RXT_ASSERT	, *chr		}; break;
-			case '$': token = (token_t){ RXT_ASSERT	, *chr		}; break;
-			case'\\': token = (token_t){ RXT_ESCAPE	, *(++chr)	}; break;
-
-			case '(': token = (token_t){ RXT_GROUP	, NA		}; break;
-			case '[': token = (token_t){ RXT_SET	, NA		}; break;
-
-			default	: token = (token_t){ RXT_LITERAL, *chr		}; break;
-		}
-
 		// reallocate new memory as its needed
 		//	on the first iteration, `rx_obj->tokens` will be `NULL`, but `reallocf` will allocate new memory for it
 		if (rx_obj->token_count + 1 > alloc_count) {
 			rx_obj->tokens = reallocf(rx_obj->tokens, MULT_BY_1_5(alloc_count) * sizeof(token_t));
 		}
 
-		rx_obj->tokens[rx_obj->token_count++] = token;
+		rx_obj->tokens[rx_obj->token_count++] = rx_tokenise_char(&chr);
 	}
 }
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
+#define RETURN_TOKEN(...) return (token_t){ __VA_ARGS__ }
+
+static inline token_t rx_tokenise_char(const char **const chr) {
+	switch (**chr) {
+		[[fallthrough]]; case '?': case '*': case '+': case '{':
+			return rx_tokenise_quant(chr);
+
+		case '|': RETURN_TOKEN(RXT_OR	  , NA			);
+		case '.': RETURN_TOKEN(RXT_DOT	  , NA			);
+		case '^': RETURN_TOKEN(RXT_ASSERT , **chr		);
+		case '$': RETURN_TOKEN(RXT_ASSERT , **chr		);
+		case'\\': RETURN_TOKEN(RXT_ESCAPE , *(++(*chr))	);
+
+		case '(': RETURN_TOKEN(RXT_GROUP  , NA			);
+		case '[': RETURN_TOKEN(RXT_SET	  , NA			);
+
+		default	: RETURN_TOKEN(RXT_LITERAL, **chr		);
+	}
+}
+
+/* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
+
+#define CHR_TO_INT(char_) ((char_) - '0')
+
+#define PACK_INTS(i1, i2)  ((((uint64_t)(uint32_t)(i1)) << (1 << (sizeof(int32_t) + 1))) | (uint32_t)(i2))
+#define UNPACK_INTS(l)			(int32_t)((uint64_t)(l) >> (1 << (sizeof(int32_t) + 1))),	(int32_t)(l)
+
 static inline token_t rx_tokenise_quant(const char **const chr) {
-	int size[2] = { 0, 0 };
+	int size[2];
 
 	switch (**chr) {
 		case '?': size[0] = 0, size[1] =  1; break;
 		case '*': size[0] = 0, size[1] = -1; break;
 		case '+': size[0] = 1, size[1] = -1; break;
 
+		// ( in `{a,b}`, assume for now that `a` and `b` are both in the range `[0,9]` )
 		case '{': 
-			// ( in `{a,b}`, assume for now that `a` and `b` are both in the range `[0,9]` )
 			// parse each of the integers, ignoring the comma and closing brace
 			size[0] = CHR_TO_INT(*(++(*chr)));
 			assert(*(++(*chr)) == ',');
@@ -103,12 +108,11 @@ static inline token_t rx_tokenise_quant(const char **const chr) {
 
 		default:
 			assert(false);
-			exit(EXIT_FAILURE);
+			exit(-1);
 	}
 
-	return (token_t){ RXT_QUANT, PACK_INTS(size[0], size[1]) };
+	RETURN_TOKEN(RXT_QUANT, PACK_INTS(size[0], size[1]));
 }
-
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
