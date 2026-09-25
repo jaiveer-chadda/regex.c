@@ -134,7 +134,7 @@ static inline token_t rx_tokenise_quant(const char **const chr) {
 	}
 
 	// store the pointer to the quant token as an `any_t` - it'll be converted back to a `RxQuantToken*` later
-	return (token_t){ RXT_QUANT, (any_t)token };
+	RETURN_TOKEN(RXT_QUANT, (any_t)token);
 }
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
@@ -174,10 +174,26 @@ static inline token_t rx_tokenise_escape(const char **const chr) {
 			RETURN_TOKEN(RXT_ANCHOR, **chr);
 
 		/// @todo implement
-		[[fallthrough]]; // \K \x \g \k   \p \P
-		case RXX_RESETPOS: case RXX_HEXESC: case RXX_NTHGROUP: case RXX_NAMEDGRP:
-		case RXX_PROPERTY: case RXX_NOPROPERTY:
+		[[fallthrough]]; // \K \g \k \p \P
+		case RXX_RESETPOS: case RXX_NTHGROUP: case RXX_NAMEDGRP: case RXX_PROPERTY: case RXX_NOPROPERTY:
 			RETURN_TOKEN(RXT_NOT_IMP, NA);
+
+		case RXX_HEXESC: // \x
+			unsigned int hex_buf = 0;
+			uint8_t iter_count = 0;
+
+			while (iter_count++ < 2) {
+				++(*chr);
+				if		('0' <= **chr && **chr <= '9') { hex_buf = (hex_buf * 16) + ((**chr - '0')		); }
+				else if ('A' <= **chr && **chr <= 'F') { hex_buf = (hex_buf * 16) + ((**chr - 'A') + 10	); }
+				else if ('a' <= **chr && **chr <= 'f') { hex_buf = (hex_buf * 16) + ((**chr - 'a') + 10	); }
+				else break; // not a hex digit
+			}
+
+			if (iter_count == 0) error_invalid_escape();
+
+			RETURN_TOKEN(RXT_LITERAL, hex_buf);
+			break;
 
 		// if it doesn't fit any of the special cases, then just return the character after the backslash
 		default: RETURN_TOKEN(RXT_LITERAL, **chr);
