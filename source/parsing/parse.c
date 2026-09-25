@@ -215,7 +215,7 @@ static inline token_t rx_tokenise_escape(const char **const chr) {
 		/// @todo implement
 		[[fallthrough]]; // \K \g \k \p \P
 		case RXX_RESETPOS: case RXX_NTHGROUP: case RXX_NAMEDGRP: case RXX_PROPERTY: case RXX_NOPROPERTY:
-			RETURN_TOKEN(RXT_NOT_IMP, NA);
+			error_not_implemented();
 
 		// if it doesn't fit any of the special cases, then just return the character after the backslash
 		default: RETURN_TOKEN(RXT_LITERAL, **chr);

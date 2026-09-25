@@ -14,8 +14,6 @@
 
 typedef enum RxTokenType {
 	RXT_INVALID	,
-	RXT_NOT_IMP	, /** Not implemented */
-
 	RXT_LITERAL	, // 'a' 'b' 'c'
 
 	RXT_DOT		, // '.'
