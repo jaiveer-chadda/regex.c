@@ -70,4 +70,8 @@
 enum RxEscape { RX__ESCS_TABLE RXE_COUNT };
 #undef X
 
+#define X(name, chr) RXX_##name = chr,
+enum RxEscChar { RX__ESCS_TABLE RXX_COUNT };
+#undef X
+
 #endif /* !ESCAPES_H_ */

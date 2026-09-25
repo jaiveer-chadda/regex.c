@@ -64,19 +64,22 @@ static inline void rx_tokenise(const rxobj_t rx_obj) {
 
 static inline token_t rx_tokenise_char(const char **const chr) {
 	switch (**chr) {
-		[[fallthrough]]; case '?': case '*': case '+': case '{':
+		[[fallthrough]]; case '^': case '$': // ^ $
+			RETURN_TOKEN(RXT_ANCHOR, **chr);
+
+		[[fallthrough]]; case '?': case '*': case '+': case '{': // ? * + {
 			return rx_tokenise_quant(chr);
 
-		case '|': RETURN_TOKEN(RXT_OR	  , NA			);
-		case '.': RETURN_TOKEN(RXT_DOT	  , NA			);
-		case '^': RETURN_TOKEN(RXT_ASSERT , **chr		);
-		case '$': RETURN_TOKEN(RXT_ASSERT , **chr		);
-		case'\\': RETURN_TOKEN(RXT_ESCAPE , *(++(*chr))	);
+		case '\\':
+			return rx_tokenise_escape(chr);
 
-		case '(': RETURN_TOKEN(RXT_GROUP  , NA			);
-		case '[': RETURN_TOKEN(RXT_SET	  , NA			);
+		case '|': RETURN_TOKEN(RXT_OR	, NA);
+		case '.': RETURN_TOKEN(RXT_DOT	, NA);
 
-		default	: RETURN_TOKEN(RXT_LITERAL, **chr		);
+		case '(': RETURN_TOKEN(RXT_GROUP, NA);
+		case '[': RETURN_TOKEN(RXT_SET	, NA);
+
+		default	: RETURN_TOKEN(RXT_LITERAL, **chr);
 	}
 }
 
@@ -132,6 +135,53 @@ static inline token_t rx_tokenise_quant(const char **const chr) {
 
 	// store the pointer to the quant token as an `any_t` - it'll be converted back to a `RxQuantToken*` later
 	return (token_t){ RXT_QUANT, (any_t)token };
+}
+
+/* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
+
+static inline token_t rx_tokenise_escape(const char **const chr) {
+	// increment the char pointer before dereferencing it
+	switch (*(++(*chr))) {
+		// translate all non-trivial literal escapes into their literal equivalents
+		case RXX_NULL	 : RETURN_TOKEN(RXT_LITERAL, '\0');
+		case RXX_ALERT	 : RETURN_TOKEN(RXT_LITERAL, '\a');
+		case RXX_HORTAB	 : RETURN_TOKEN(RXT_LITERAL, '\t');
+		case RXX_LINEFD	 : RETURN_TOKEN(RXT_LITERAL, '\n');
+		case RXX_VERTAB	 : RETURN_TOKEN(RXT_LITERAL, '\v');
+		case RXX_FORMFD	 : RETURN_TOKEN(RXT_LITERAL, '\f');
+		case RXX_RETURN	 : RETURN_TOKEN(RXT_LITERAL, '\r');
+		case RXX_ESCAPE	 : RETURN_TOKEN(RXT_LITERAL,'\33');
+
+		// distinguish character classes by the character used to instantiate them
+		[[fallthrough]]; // \T \N \V \F   \d \s \w   \D \S \W   \R \X \C
+		case RXX_NOHORTAB: case RXX_NOLINEFD: case RXX_NOVERTAB	: case RXX_NOFORMFD:
+		case RXX_DIGIT	 : case RXX_WORD	: case RXX_SPACE	:
+		case RXX_NODIGIT : case RXX_NOWORD	: case RXX_NOSPACE	:
+		case RXX_NEWLINE : case RXX_ANYCHAR	: case RXX_ONEBYTE	:
+			RETURN_TOKEN(RXT_CLASS, **chr);
+
+		// set up backreferences with a reference to their name
+		//	this value is temporary tho - I'll make a proper backreference object later
+		[[fallthrough]]; // \1 -> \9
+		case RXX_1: case RXX_2: case RXX_3: case RXX_4: case RXX_5: case RXX_6: case RXX_7: case RXX_8: case RXX_9:
+			RETURN_TOKEN(RXT_BACKREF, CHR_TO_INT(**chr));
+
+		// anchors / assertions
+		[[fallthrough]]; // \A \G \z \Z   \b \B   \Q \E
+		case RXX_STRSTART: case RXX_SEQUENCE: case RXX_STREND: case RXX_STRENDNL:
+		case RXX_BOUNDARY: case RXX_NOBOUND:
+		case RXX_BEGQUOTE: case RXX_ENDQUOTE:
+			RETURN_TOKEN(RXT_ANCHOR, **chr);
+
+		/// @todo implement
+		[[fallthrough]]; // \K \x \g \k   \p \P
+		case RXX_RESETPOS: case RXX_HEXESC: case RXX_NTHGROUP: case RXX_NAMEDGRP:
+		case RXX_PROPERTY: case RXX_NOPROPERTY:
+			RETURN_TOKEN(RXT_NOT_IMP, NA);
+
+		// if it doesn't fit any of the special cases, then just return the character after the backslash
+		default: RETURN_TOKEN(RXT_LITERAL, **chr);
+	}
 }
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
