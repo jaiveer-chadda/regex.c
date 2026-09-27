@@ -1,6 +1,5 @@
 /// @file parsing/tokens/group.c
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -11,6 +10,7 @@
 
 #define GRP_IDEN_COUNT (sizeof(RX_GROUP_IDENS) / sizeof(RX_GROUP_IDENS[0]))
 
+// note: this struct is only used in this file
 typedef struct {
 	const char *const name;
 	const size_t	  len;
@@ -43,8 +43,9 @@ static inline RxGroup rx_get_group_type(const char **const chr);
 
 token_t rx_tokenise_group(const char **const chr, const rxobj_t rx_obj) {
 	const RxGroup type = rx_get_group_type(chr);
-
 	RxGroupToken *group = NULL;
+
+	/* ———————————————————————————————————————————————————— */
 
 	switch (type) {
 		case RXG_NAMED:
@@ -69,6 +70,8 @@ token_t rx_tokenise_group(const char **const chr, const rxobj_t rx_obj) {
 			};
 
 			break;
+
+		/* ———————————————————————————————————————————————————— */
 
 		case RXG_FLAGS:
 			uint64_t flags = 0;
@@ -109,14 +112,46 @@ token_t rx_tokenise_group(const char **const chr, const rxobj_t rx_obj) {
 		default: break;
 	}
 
-	if (group == NULL) {
-		group = calloc(1, sizeof(RxGroupToken));
+	/* ———————————————————————————————————————————————————— */
 
+	if (group == NULL) {
+		// this is a small adjustment for the non-named/flag groups,
+		//	so that the pointer always starts at the character _before_ the group's contents
+		(*chr)--;
+
+		group = calloc(1, sizeof(RxGroupToken));
 		group->id = (groupid_t){
 			.type = GIDT_INT,
 			.id = ++(rx_obj->group_count)
 		};
 	}
+
+	/* ———————————————————————————————————————————————————— */
+	
+	size_t alloc_count = 0;
+
+	// note: since I've exclusively used `calloc` to assign memory for `group`,
+	//	`group->tokens` will start at `NULL`, and `group->token_count` will start at `0`
+	while (*(++(*chr)) != '\0' && **chr != ')') {
+		if (group->token_count + 1 > alloc_count) {
+			group->tokens = reallocf(group->tokens, MULT_BY_1_5(alloc_count) * sizeof(token_t));
+		}
+		// note: the `rx_tokenise_char` may recurse into itself, as there may be nested groups to be parsed
+		group->tokens[group->token_count++] = rx_tokenise_char(chr, rx_obj);
+	}
+
+	/* ———————————————————————————————————————————————————— */
+
+	if (**chr == '\0') {
+		if (group->tokens != NULL) free(group->tokens);
+		free(group);
+
+		error_unterminated_group();
+	}
+
+	/* ———————————————————————————————————————————————————— */
+
+	group->type = type;
 
 	RETURN_TOKEN(RXT_GROUP, group);
 }
@@ -147,6 +182,8 @@ static inline RxGroup rx_get_group_type(const char **const chr) {
 				default: return RXG_FLAGS; // (?flags:...)
 			}
 
+		/* ———————————————————————————————————————————————————— */
+
 		case '*': // (*iden:...)
 			// note down where the identifier starts
 			const char *const iden_start = (*chr) + 1;
@@ -159,6 +196,8 @@ static inline RxGroup rx_get_group_type(const char **const chr) {
 
 			if (**chr != ':') error_invalid_group_type();
 
+			/* ———————————————————————————————————————————————————— */
+
 			const size_t iden_len = (size_t)(*chr - iden_start);
 			for (size_t i = 0; i < GRP_IDEN_COUNT; i++) {
 				const rx__grpiden iden_i = RX_GROUP_IDENS[i];
@@ -169,6 +208,8 @@ static inline RxGroup rx_get_group_type(const char **const chr) {
 			}
 
 			error_invalid_group_type();
+
+		/* ———————————————————————————————————————————————————— */
 
 		default: return RXG_REGULAR; // (...)
 	}

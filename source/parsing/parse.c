@@ -9,8 +9,7 @@
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 static inline rxobj_t rx_init(const char *const string, const uint64_t flags);
-static inline void	  rx_tokenise(const rxobj_t rx_obj);
-static inline token_t rx_tokenise_char(const char **const chr, const rxobj_t rx_obj);
+static inline void rx_tokenise(const rxobj_t rx_obj);
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
@@ -60,7 +59,7 @@ static inline void rx_tokenise(const rxobj_t rx_obj) {
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-static inline token_t rx_tokenise_char(const char **const chr, const rxobj_t rx_obj) {
+token_t rx_tokenise_char(const char **const chr, const rxobj_t rx_obj) {
 	switch (**chr) {
 		[[fallthrough]]; case '^': case '$': // ^ $
 			RETURN_TOKEN(RXT_ANCHOR, **chr);

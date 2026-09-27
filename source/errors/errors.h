@@ -10,6 +10,7 @@ void error_invalid_escape(void);
 void error_impossible_case(void);
 void error_not_implemented(void);
 void error_unterminated_set(void);
+void error_unterminated_group(void);
 void error_invalid_group_type(void);
 void error_invalid_group_name(void);
 

@@ -86,6 +86,7 @@ typedef struct rx__regex *rxobj_t;
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 rxobj_t rx_compile(const char *const string, const uint64_t flags);
+token_t rx_tokenise_char(const char **const chr, const rxobj_t rx_obj);
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 

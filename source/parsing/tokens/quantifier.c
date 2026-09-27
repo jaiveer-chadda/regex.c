@@ -39,8 +39,6 @@ token_t rx_tokenise_quant(const char **const chr) {
 
 			// if the char isn't a closing brace, or if `m` is smaller than `n` (given `{n,m}`), the quant is invalid
 			if (**chr != '}' || size[0] > size[1]) error_invalid_quant();
-
-			(*chr)++; // finally, increment the char pointer so its pointing at the char after the closing brace
 			break;
 
 		default:
