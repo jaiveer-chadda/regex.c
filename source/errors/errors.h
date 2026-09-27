@@ -3,11 +3,13 @@
 #ifndef ERRORS_H_
 #define ERRORS_H_
 
+void error_invalid_flag(void);
 void error_invalid_quant(void);
 void error_invalid_range(void);
 void error_invalid_escape(void);
 void error_impossible_case(void);
 void error_not_implemented(void);
 void error_unterminated_set(void);
+void error_invalid_group_type(void);
 
 #endif /* !ERRORS_H_ */

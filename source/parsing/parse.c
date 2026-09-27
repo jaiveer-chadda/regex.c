@@ -26,12 +26,12 @@ rxobj_t rx_compile(const char *const string, const uint64_t flags) {
 
 static inline rxobj_t rx_init(const char *const string, const uint64_t flags) {
 	const rxobj_t rx_obj = calloc(1, sizeof(struct rx__regex));
-	const size_t str_len = strlen(string) + 1;
+	const size_t str_len = string == NULL ? 0 : strlen(string) + 1;
 
 	*rx_obj = (struct rx__regex){
 		.token_count = 0,
 		.tokens = NULL,
-		.string = memdup(string, str_len),
+		.string = string == NULL ? NULL : memdup(string, str_len),
 		.flags  = flags,
 	};
 
@@ -63,6 +63,7 @@ static inline void rx_tokenise(const rxobj_t rx_obj) {
 #define RETURN_TOKEN(type, value) return (token_t){ (RxTokenType)type, (any_t)value }
 
 static inline token_t rx_tokenise_char(const char **const chr) {
+
 	switch (**chr) {
 		[[fallthrough]]; case '^': case '$': // ^ $
 			RETURN_TOKEN(RXT_ANCHOR, **chr);
@@ -78,7 +79,7 @@ static inline token_t rx_tokenise_char(const char **const chr) {
 		case '|': RETURN_TOKEN(RXT_OR	, NA);
 		case '.': RETURN_TOKEN(RXT_DOT	, NA);
 
-		case '(': RETURN_TOKEN(RXT_GROUP, NA);
+		case '(': return rx_tokenise_group(chr);
 		case '[': return rx_tokenise_set(chr);
 
 		default	: return rx_tokenise_literal(chr);
@@ -87,8 +88,73 @@ static inline token_t rx_tokenise_char(const char **const chr) {
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-static inline token_t rx_tokenise_literal(const char **const chr) { 
+static inline token_t rx_tokenise_literal(const char **const chr) {
 	return (**chr == '\\') ? rx_tokenise_escape(chr) : (token_t){ RXT_LITERAL, **chr };
+}
+
+/* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
+
+static inline RxGroup rx_get_group_type(const char **const chr) {
+	switch (*(++(*chr))) {
+		case '?':
+			switch (*(++(*chr))) {
+				case ':': return RXG_NON_CAPT; // (?:...)
+				case '#': return RXG_COMMENT ; // (?#...)
+				case '|': return RXG_SAME_NUM; // (?|...|...)
+				case '>': return RXG_ATOMIC	 ; // (?>...)
+				case '*': return RXG_NAPLA	 ; // (?*...)
+				case '=': return RXG_PLA	 ; // (?=...)
+				case '!': return RXG_PLB	 ; // (?!...)
+				case'\'': return RXG_NAMED	 ; // (?'name'...)
+				case 'P': return RXG_NAMED	 ; // (?P<name>...)
+				case '<':
+					switch (*(++(*chr))) {
+						case '*': return RXG_NAPLB; // (?<*...)
+						case '=': return RXG_PLB  ; // (?<=...)
+						case '!': return RXG_NLB  ; // (?<!...)
+						default	: return RXG_NAMED; // (?<name>...)
+					}
+
+				default: return RXG_FLAGS; // (?flags:...)
+			}
+
+		case '*': // (*iden:...)
+			// note down where the identifier starts
+			const char *const iden_start = (*chr) + 1;
+
+			// iterate through the identifier to find its length
+			while (*(++(*chr)) != '\0'
+				&& **chr != ':'
+				&& **chr != ')' // maybe remove later when implementing the `(?X)` groups?
+			);
+
+			if (**chr != ':') error_invalid_group_type();
+
+			const size_t iden_len = (size_t)(*chr - iden_start);
+			for (size_t i = 0; i < GRP_IDEN_COUNT; i++) {
+				const rx__grpiden iden_i = RX_GROUP_IDENS[i];
+
+				if (iden_len == iden_i.len && strncmp(iden_start, iden_i.name, iden_len) == 0) {
+					return iden_i.type;
+				}
+			}
+
+			error_invalid_group_type();
+
+		default: return RXG_REGULAR; // (...)
+	}
+}
+
+/* ———————————————————————————————————————————————————— */
+
+static inline token_t rx_tokenise_group(const char **const chr) {
+	const RxGroup type = rx_get_group_type(chr);
+	(void)type;
+
+	// error_invalid_flag();
+	// const rxobj_t group_obj = rx_init(NULL, 0);
+
+	RETURN_TOKEN(RXT_GROUP, NA);
 }
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
@@ -299,3 +365,5 @@ static inline token_t rx_tokenise_escape(const char **const chr) {
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
+
+// spell:ignoreRegExp /(?:\b|_)\w?apl\w\b/gi

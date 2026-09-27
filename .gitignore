@@ -4,6 +4,7 @@
 ## —— Project Files —— ##
 out/
 build/
+archive/
 
 ## —— System Files ——— ##
 .DS_Store
