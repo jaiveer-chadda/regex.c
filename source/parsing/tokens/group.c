@@ -41,7 +41,7 @@ static inline RxGroup rx_get_group_type(const char **const chr);
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-token_t rx_tokenise_group(const char **const chr) {
+token_t rx_tokenise_group(const char **const chr, const rxobj_t rx_obj) {
 	const RxGroup type = rx_get_group_type(chr);
 
 	RxGroupToken *group = NULL;
@@ -96,11 +96,26 @@ token_t rx_tokenise_group(const char **const chr) {
 			if (**chr != ':') error_invalid_flag();
 
 			group = calloc(1, sizeof(RxGroupToken));
+
 			group->info = (any_t)flags;
+			group->id = (groupid_t){
+				.type = GIDT_INT,
+				// since the count starts at 0, it needs to be incremented first before being assigned
+				.id = ++(rx_obj->group_count)
+			};
 
 			break;
 
 		default: break;
+	}
+
+	if (group == NULL) {
+		group = calloc(1, sizeof(RxGroupToken));
+
+		group->id = (groupid_t){
+			.type = GIDT_INT,
+			.id = ++(rx_obj->group_count)
+		};
 	}
 
 	RETURN_TOKEN(RXT_GROUP, group);

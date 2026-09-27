@@ -73,9 +73,12 @@ typedef struct {
 
 struct rx__regex {
 	uint64_t flags;
+	const char *string;
+
 	token_t *tokens;
 	size_t token_count;
-	const char *string;
+
+	uint16_t group_count;
 };
 
 typedef struct rx__regex *rxobj_t;

@@ -10,7 +10,7 @@
 
 static inline rxobj_t rx_init(const char *const string, const uint64_t flags);
 static inline void	  rx_tokenise(const rxobj_t rx_obj);
-static inline token_t rx_tokenise_char(const char **const chr);
+static inline token_t rx_tokenise_char(const char **const chr, const rxobj_t rx_obj);
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
@@ -31,6 +31,7 @@ static inline rxobj_t rx_init(const char *const string, const uint64_t flags) {
 	const size_t str_len = string == NULL ? 0 : strlen(string) + 1;
 
 	*rx_obj = (struct rx__regex){
+		.group_count = 0,
 		.token_count = 0,
 		.tokens = NULL,
 		.string = string == NULL ? NULL : memdup(string, str_len),
@@ -53,13 +54,13 @@ static inline void rx_tokenise(const rxobj_t rx_obj) {
 			rx_obj->tokens = reallocf(rx_obj->tokens, MULT_BY_1_5(alloc_count) * sizeof(token_t));
 		}
 
-		rx_obj->tokens[rx_obj->token_count++] = rx_tokenise_char(&chr);
+		rx_obj->tokens[rx_obj->token_count++] = rx_tokenise_char(&chr, rx_obj);
 	}
 }
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-static inline token_t rx_tokenise_char(const char **const chr) {
+static inline token_t rx_tokenise_char(const char **const chr, const rxobj_t rx_obj) {
 	switch (**chr) {
 		[[fallthrough]]; case '^': case '$': // ^ $
 			RETURN_TOKEN(RXT_ANCHOR, **chr);
@@ -75,7 +76,7 @@ static inline token_t rx_tokenise_char(const char **const chr) {
 		case '|': RETURN_TOKEN(RXT_OR	, NA);
 		case '.': RETURN_TOKEN(RXT_DOT	, NA);
 
-		case '(': return rx_tokenise_group(chr);
+		case '(': return rx_tokenise_group(chr, rx_obj);
 		case '[': return rx_tokenise_set(chr);
 
 		default	: return rx_tokenise_literal(chr);
