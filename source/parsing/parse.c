@@ -75,17 +75,20 @@ static inline token_t rx_tokenise_char(const char **const chr) {
 			//	they should all be handled by their own individual functions
 			error_invalid_quant();
 
-		case '\\':
-			return rx_tokenise_escape(chr);
-
 		case '|': RETURN_TOKEN(RXT_OR	, NA);
 		case '.': RETURN_TOKEN(RXT_DOT	, NA);
 
 		case '(': RETURN_TOKEN(RXT_GROUP, NA);
 		case '[': return rx_tokenise_set(chr);
 
-		default	: RETURN_TOKEN(RXT_LITERAL, **chr);
+		default	: return rx_tokenise_literal(chr);
 	}
+}
+
+/* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
+
+static inline token_t rx_tokenise_literal(const char **const chr) { 
+	return (**chr == '\\') ? rx_tokenise_escape(chr) : (token_t){ RXT_LITERAL, **chr };
 }
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
@@ -115,18 +118,36 @@ static inline token_t rx_tokenise_set(const char **const chr) {
 		// create a token for the parsed char, which will either be a literal (e.g. `A`) or a class (e.g. `\d`)
 		token_t token;
 
-		// if chr is `\`, send it off to be parsed as an escape
+		// if the character is a hyphen, and its not the first or last character
+		if (**chr == '-' && !(set_tk->token_count == 0 || *(*chr + 1) == ']')) {
+			// get the previous token that we added, and decrement the token count so that it can be overwritten
+			const token_t chr1 = set_tk->tokens[--(set_tk->token_count)];
+			(*chr)++; // point `chr` at the second character
+			const token_t chr2 = rx_tokenise_literal(chr);
+
+			// only accept the chars if they're literals
+			//	also, don't allow ranges where the second char is smaller than the first
+			if (chr1.type != RXT_LITERAL || chr2.type != RXT_LITERAL || chr1.value > chr2.value) {
+				free(set_tk->tokens); free(set_tk);
+				error_invalid_range();
+			}
+
+			// allocate a range object, and assign it to `token`
+			RxRangeToken *const range = malloc(sizeof(RxRangeToken));
+			*range = (RxRangeToken){ .lhs = chr1.value, .rhs = chr2.value };
+
+			// this token will overwrite the old token of `chr1`
+			token = (token_t){ RXT_RANGE, (any_t)range };
+
+		// otherwise, the character should be interpreted as a literal by `rx_tokenise_literal`
 		//	however, only accept the result of that function if its a literal or class
-		if (**chr == '\\') {
-			token = rx_tokenise_escape(chr);
+		} else {
+			token = rx_tokenise_literal(chr);
 
 			if (token.type != RXT_LITERAL && token.type != RXT_CLASS) {
 				free(set_tk->tokens); free(set_tk);
 				error_invalid_escape();
 			}
-		} else {
-			// if it isn't any of the special cases, then just return the value as a literal
-			token = (token_t){ RXT_LITERAL, **chr };
 		}
 
 		set_tk->tokens[set_tk->token_count++] = token;

@@ -25,6 +25,7 @@ typedef enum RxTokenType {
 
 	RXT_GROUP	, // '('
 	RXT_SET		, // '['
+	RXT_RANGE	, // ['a-z']
 
 	RXT_QUANT	, // '+' '*' '?' '{1,2}'
 } RxTokenType;
@@ -55,6 +56,10 @@ typedef struct {
 } RxQuantToken;
 
 typedef struct {
+	char lhs, rhs;
+} RxRangeToken;
+
+typedef struct {
 	token_t *tokens;
 	size_t token_count;
 	bool is_inverse;
@@ -77,6 +82,7 @@ static inline token_t	rx_tokenise_set(const char **const chr);
 static inline token_t	rx_tokenise_char(const char **const chr);
 static inline token_t	rx_tokenise_quant(const char **const chr);
 static inline token_t	rx_tokenise_escape(const char **const chr);
+static inline token_t	rx_tokenise_literal(const char **const chr);
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
