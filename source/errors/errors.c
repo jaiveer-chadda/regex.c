@@ -13,3 +13,4 @@ void error_impossible_case		(void) { BASIC_ERR(2); }
 void error_not_implemented		(void) { BASIC_ERR(3); }
 void error_unterminated_set		(void) { BASIC_ERR(1); }
 void error_invalid_group_type	(void) { BASIC_ERR(1); }
+void error_invalid_group_name	(void) { BASIC_ERR(1); }

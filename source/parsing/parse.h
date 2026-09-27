@@ -42,17 +42,32 @@ typedef enum rx__tokentype {
 
 typedef int64_t any_t;
 
+typedef enum	{ GIDT_INT, GIDT_STR,			} RxGroupIDType;
+typedef struct	{ any_t id; RxGroupIDType type;	} groupid_t;
+
+/* ———————————————————————————————————————————— */
+
 /// @brief Generic token type.
 typedef struct { RxTokenType type; any_t value; } token_t;
+
+/* ———————————————————————————————————————————— */
 
 #define RETURN_TOKEN(type, value) return (token_t){ (RxTokenType)type, (any_t)value }
 
 /* ———————————————————————————————————————————— */
 
-typedef struct { void* _;												} RxGroupToken;
 typedef struct { char lhs, rhs;											} RxRangeToken;
 typedef struct { int lhs, rhs; bool has_qm;								} RxQuantToken;
 typedef struct { token_t *tokens; size_t token_count; bool is_inverse;	} RxSetToken;
+
+typedef struct {
+	groupid_t id;
+	token_t *tokens;
+	size_t token_count;
+
+	RxGroup type;
+	any_t info;
+} RxGroupToken;
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 

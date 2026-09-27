@@ -1,5 +1,7 @@
 /// @file parsing/tokens/group.c
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "parsing/parse.h"
@@ -41,12 +43,67 @@ static inline RxGroup rx_get_group_type(const char **const chr);
 
 token_t rx_tokenise_group(const char **const chr) {
 	const RxGroup type = rx_get_group_type(chr);
-	(void)type;
 
-	// error_invalid_flag();
-	// const rxobj_t group_obj = rx_init(NULL, 0);
+	RxGroupToken *group = NULL;
 
-	RETURN_TOKEN(RXT_GROUP, NA);
+	switch (type) {
+		case RXG_NAMED:
+			// depending on which character was used to begin the named group,
+			//	work out which one we're expecting to end it
+			char end_char;
+			switch (*(--(*chr))) {
+				case '\'': end_char = '\''; break;
+				case '<' : end_char = '>' ; break;
+				default: error_impossible_case();
+			}
+
+			const char *const name_start = (*chr) + 1;
+			while (*(++(*chr)) != '\0' && **chr != end_char);
+
+			if (**chr != end_char) error_invalid_group_name();
+
+			group = calloc(1, sizeof(RxGroupToken));
+			group->id = (groupid_t){
+				.type = GIDT_STR,
+				.id = (any_t)strndup(name_start, *chr - name_start)
+			};
+
+			break;
+
+		case RXG_FLAGS:
+			uint64_t flags = 0;
+
+			// iterate through the flags
+			while (*(++(*chr)) != '\0' && **chr != ':') {
+				// keep track of whether a flag's been found on this iteration
+				bool found = false;
+
+				// now iterate through each of the possible flags
+				for (int i = 0; i < RXF_COUNT; i++) {
+					// if the current char matches on of the possible flags
+					if ((char)RX_FLAGS[i].val == **chr) {
+						flags |= RX_FLAGS[i].bf; // firstly, add it to the `flags` variable
+						found = true; // then mark down that its been found
+						break; // then move on - there can't be any more matches for this char
+					}
+				}
+
+				// if we've broken out of the loop without finding anything, then this char isn't a valid flag char
+				if (!found) error_invalid_flag();
+			}
+
+			// make sure that it was the colon that caused us to break out of the loop
+			if (**chr != ':') error_invalid_flag();
+
+			group = calloc(1, sizeof(RxGroupToken));
+			group->info = (any_t)flags;
+
+			break;
+
+		default: break;
+	}
+
+	RETURN_TOKEN(RXT_GROUP, group);
 }
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
