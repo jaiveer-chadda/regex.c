@@ -54,6 +54,12 @@ typedef struct {
 	bool has_qm;
 } RxQuantToken;
 
+typedef struct {
+	token_t *tokens;
+	size_t token_count;
+	bool is_inverse;
+} RxSetToken;
+
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 struct rx__regex {
@@ -67,6 +73,7 @@ struct rx__regex {
 
 static inline rxobj_t	rx_init(const char *const string, const uint64_t flags);
 static inline void		rx_tokenise(const rxobj_t rx_obj);
+static inline token_t	rx_tokenise_set(const char **const chr);
 static inline token_t	rx_tokenise_char(const char **const chr);
 static inline token_t	rx_tokenise_quant(const char **const chr);
 static inline token_t	rx_tokenise_escape(const char **const chr);

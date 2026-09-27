@@ -60,7 +60,7 @@ static inline void rx_tokenise(const rxobj_t rx_obj) {
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-#define RETURN_TOKEN(...) return (token_t){ __VA_ARGS__ }
+#define RETURN_TOKEN(type, value) return (token_t){ (RxTokenType)type, (any_t)value }
 
 static inline token_t rx_tokenise_char(const char **const chr) {
 	switch (**chr) {
@@ -70,6 +70,11 @@ static inline token_t rx_tokenise_char(const char **const chr) {
 		[[fallthrough]]; case '?': case '*': case '+': case '{': // ? * + {
 			return rx_tokenise_quant(chr);
 
+		[[fallthrough]]; /* case ')': */ case ']': case '}': // ) ] }
+			// none of these should ever be encountered on their own
+			//	they should all be handled by their own individual functions
+			error_invalid_quant();
+
 		case '\\':
 			return rx_tokenise_escape(chr);
 
@@ -77,7 +82,7 @@ static inline token_t rx_tokenise_char(const char **const chr) {
 		case '.': RETURN_TOKEN(RXT_DOT	, NA);
 
 		case '(': RETURN_TOKEN(RXT_GROUP, NA);
-		case '[': RETURN_TOKEN(RXT_SET	, NA);
+		case '[': return rx_tokenise_set(chr);
 
 		default	: RETURN_TOKEN(RXT_LITERAL, **chr);
 	}
@@ -85,10 +90,58 @@ static inline token_t rx_tokenise_char(const char **const chr) {
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-/// @returns true if the character `chr` represents a digit, and false otherwise.
-static inline bool chr_is_dig(const char chr) { return '0' <= (chr) && (chr) <= '9'; }
+static inline token_t rx_tokenise_set(const char **const chr) {
+	// note: `calloc` will initialise `*tokens` to `NULL`, `token_count` to `0`, and `is_inverse` to `false`
+	RxSetToken *const set_tk = calloc(1, sizeof(RxSetToken));
+
+	// if the first character in a set is `^`, then mark the set as an inverse set
+	if (*(*chr + 1) == '^') {
+		(*chr)++; // discard the `^`
+		set_tk->is_inverse = true;
+	}
+
+	size_t alloc_count = 0;
+
+	// iterate through the regex until we find a closing bracket
+	while (*(++(*chr)) != ']') {
+		// if we reach the end of the string, then we know something's gone wrong
+		if (**chr == '\0') error_unterminated_set();
+
+		// reallocate new memory as its needed
+		if (set_tk->token_count + 1 > alloc_count) {
+			set_tk->tokens = reallocf(set_tk->tokens, MULT_BY_1_5(alloc_count) * sizeof(token_t));
+		}
+
+		// create a token for the parsed char, which will either be a literal (e.g. `A`) or a class (e.g. `\d`)
+		token_t token;
+
+		// if chr is `\`, send it off to be parsed as an escape
+		//	however, only accept the result of that function if its a literal or class
+		if (**chr == '\\') {
+			token = rx_tokenise_escape(chr);
+
+			if (token.type != RXT_LITERAL && token.type != RXT_CLASS) {
+				free(set_tk->tokens); free(set_tk);
+				error_invalid_escape();
+			}
+		} else {
+			// if it isn't any of the special cases, then just return the value as a literal
+			token = (token_t){ RXT_LITERAL, **chr };
+		}
+
+		set_tk->tokens[set_tk->token_count++] = token;
+	}
+
+	// return the whole set, which now contains an array of its individual literals/classes
+	RETURN_TOKEN(RXT_SET, set_tk);
+}
+
+/* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 #define CHR_TO_INT(char_) ((char_) - '0')
+
+/// @returns true if the character `chr` represents a digit, and false otherwise.
+static inline bool chr_is_dig(const char chr) { return '0' <= (chr) && (chr) <= '9'; }
 
 static inline token_t rx_tokenise_quant(const char **const chr) {
 	int size[2] = {0};
@@ -134,7 +187,7 @@ static inline token_t rx_tokenise_quant(const char **const chr) {
 	}
 
 	// store the pointer to the quant token as an `any_t` - it'll be converted back to a `RxQuantToken*` later
-	RETURN_TOKEN(RXT_QUANT, (any_t)token);
+	RETURN_TOKEN(RXT_QUANT, token);
 }
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
@@ -162,6 +215,7 @@ static inline token_t rx_tokenise_escape(const char **const chr) {
 
 		// set up backreferences with a reference to their name
 		//	this value is temporary tho - I'll make a proper backreference object later
+		/// @todo make a proper backreference object
 		[[fallthrough]]; // \1 -> \9
 		case RXX_1: case RXX_2: case RXX_3: case RXX_4: case RXX_5: case RXX_6: case RXX_7: case RXX_8: case RXX_9:
 			RETURN_TOKEN(RXT_BACKREF, CHR_TO_INT(**chr));
