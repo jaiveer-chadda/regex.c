@@ -9,6 +9,7 @@
 
 #include "_flags.h"
 #include "_chars.h"
+#include "_groups.h"
 #include "_escapes.h"
 
 #ifndef RX__TYPE_IMPLEMENTATION
@@ -28,6 +29,8 @@ const bfmap_t RX_FLAGS[RXF_COUNT], RX_CHARS[RXC_COUNT], RX_ESCS[RXE_COUNT];
 typedef enum RxFlag	  RxFlag  ;
 /** An enum holding every semantically-significant regex character. */
 typedef enum RxChar	  RxChar  ;
+/** An enum holding all the types of groups that can be defined. */
+typedef enum RxGroup  RxGroup;
 /** An enum holding every character that can appear after a backslash. */
 typedef enum RxEscape RxEscape;
 
