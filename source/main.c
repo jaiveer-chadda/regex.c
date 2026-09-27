@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "types/types.h"
+#include "output/print.h"
 #include "parsing/parse.h"
 
 #pragma clang diagnostic push
@@ -12,8 +13,7 @@
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-const char REGEX[] = "^[-\\w]+[0-9]*@\\w+?(?<group>Mail|male)\\b(\\.(\\x1be)?[a-z]{2,4}){1,3}$";
-
+const char REGEX[] = "^[-\\w]+[0-9]*@\\w+?(?<group>Mail|male)\\b(\\.(\\x40e)?[a-z]{2,}){1,3}$";
 const char INPUT[] =
 	"If you may please to think I love the King, And through him what's nearest to him, which is Your "	"\n"
 	"gracious self, embrace but my direction. If your more ponderous and settled project May suffer "	"\n"
@@ -26,13 +26,10 @@ const char INPUT[] =
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 int main(const int argc, const char *const argv[]) {
-
-	puts(REGEX);
-
 	const rxobj_t regex = rx_compile(REGEX, RX_FLAGS[RXF_GLOBAL].bf | RX_FLAGS[RXF_MULTILINE].bf);
 
-	// for (const char *c = INPUT; *c != '\0'; c++) putchar(*c);
-	// putchar('\n');
+	puts(REGEX);
+	print_regex(regex);
 
 	return 0;
 }
