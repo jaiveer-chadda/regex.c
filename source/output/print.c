@@ -17,9 +17,12 @@ static inline void rx_print_tokens(const token_t *const tokens, const size_t cou
 		switch (token.type) {
 			case RXT_LITERAL: putchar(token.value); break;
 
-			case RXT_DOT: fputs("\33[38;5;123m.\33[m", stdout); break;
-
-			case RXT_CLASS: printf("\33[34m\\%c\33[m", (char)token.value); break;
+			case RXT_CLASS:
+				printf("\33[34m%c%c\33[m",
+					((char)token.value == '.') ? '\0' : '\\',
+					((char)token.value)
+				);
+				break;
 
 			case RXT_OR: fputs("\33[32m|\33[m", stdout); break;
 			case RXT_ANCHOR:

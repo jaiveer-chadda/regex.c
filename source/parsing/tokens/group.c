@@ -136,7 +136,7 @@ token_t rx_tokenise_group(const char **const chr, const rxobj_t rx_obj) {
 		if (group->token_count + 1 > alloc_count) {
 			group->tokens = reallocf(group->tokens, MULT_BY_1_5(alloc_count) * sizeof(token_t));
 		}
-		// note: the `rx_tokenise_char` may recurse into itself, as there may be nested groups to be parsed
+		// note: the `rx_tokenise_char` function may recurse into itself, as there may be nested groups to be parsed
 		group->tokens[group->token_count++] = rx_tokenise_char(chr, rx_obj);
 	}
 

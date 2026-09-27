@@ -72,8 +72,8 @@ token_t rx_tokenise_char(const char **const chr, const rxobj_t rx_obj) {
 			//	they should all be handled by their own individual functions
 			error_invalid_quant();
 
-		case '|': RETURN_TOKEN(RXT_OR	, NA);
-		case '.': RETURN_TOKEN(RXT_DOT	, NA);
+		case '|': RETURN_TOKEN(RXT_OR, NA);
+		case '.': RETURN_TOKEN(RXT_CLASS, '.');
 
 		case '(': return rx_tokenise_group(chr, rx_obj);
 		case '[': return rx_tokenise_set(chr);
