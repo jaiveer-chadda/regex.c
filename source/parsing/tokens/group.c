@@ -43,12 +43,6 @@ static inline RxGroup rx_get_group_type(const char **const chr);
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-#define REALLOC_FOR(arr, elem_count, alloc_count, type) do { \
-	if ((elem_count) + 1 > (alloc_count)) { \
-		(arr) = reallocf((arr), MULT_BY_1_5((alloc_count)) * sizeof(type)); \
-	} \
-} while (0)
-
 token_t rx_tokenise_group(const char **const chr, const rxobj_t rx_obj) {
 	const RxGroup type = rx_get_group_type(chr);
 	RxGroupToken *group = NULL;
@@ -137,9 +131,7 @@ token_t rx_tokenise_group(const char **const chr, const rxobj_t rx_obj) {
 	/* ———————————————————————————————————————————————————— */
 
 	size_t t_alloc_count = 0;
-	size_t token_count = 0;
-
-	token_t *tokens = NULL;
+	RxTokens tokens = { .arr = NULL, .len = 0 };
 
 	size_t sec_alloc_count = 0;
 	RxOrToken *or_token = NULL;
@@ -151,15 +143,15 @@ token_t rx_tokenise_group(const char **const chr, const rxobj_t rx_obj) {
 		/* ———————————————————————————————————————————————————— */
 
 		// allocate more memory for the individual tokens if needed
-		REALLOC_FOR(tokens, token_count, t_alloc_count, token_t);
+		REALLOC_FOR(tokens.arr, tokens.len, t_alloc_count, token_t);
 
 		// get the actual tokens from 
 		// note: the `rx_tokenise_char` function may recurse into itself, as there may be nested groups to be parsed
-		token_t token = rx_tokenise_char(chr, rx_obj);
+		const token_t token = rx_tokenise_char(chr, rx_obj);
 
 		// if the token isn't a `|` token, then simply add whichever token was found to the `tokens` array
 		if (token.type != RXT_OR) {
-			tokens[token_count++] = token;
+			tokens.arr[tokens.len++] = token;
 			continue;
 		}
 
@@ -170,18 +162,16 @@ token_t rx_tokenise_group(const char **const chr, const rxobj_t rx_obj) {
 		if (or_token == NULL) or_token = calloc(1, sizeof(RxOrToken));
 
 		// then, reallocate memory for the `sections` array, as needed
-		REALLOC_FOR(or_token->sections, or_token->count, sec_alloc_count, RxSection);
+		REALLOC_FOR(or_token->sections, or_token->count, sec_alloc_count, RxTokens);
 
 		// an `RXT_OR` token will consist of an array of "sections"
 		//	each of these sections will be an array of generic `token_t`s
 		// therefore, copy the information from the `tokens` array over into the `sections` array
-		or_token->sections[or_token->count++] = (RxSection){
-			.tokens = tokens,
-			.token_count = token_count
-		};
+		or_token->sections[or_token->count++] = tokens;
 
 		// then reset all information about the `tokens` array, so it can start being filled again
-		t_alloc_count = 0, token_count = 0, tokens = NULL;
+		t_alloc_count = 0,
+		tokens = (RxTokens){0};
 	}
 	
 	/* ———————————————————————————————————————————————————— */
@@ -189,7 +179,7 @@ token_t rx_tokenise_group(const char **const chr, const rxobj_t rx_obj) {
 	// make sure that we actually reached the end of the group
 	if (**chr == '\0') {
 		if (or_token->sections != NULL) free(or_token->sections);
-		if (group->tokens != NULL) free(group->tokens);
+		if (group->tokens.arr  != NULL) free(group->tokens.arr);
 		free(group);
 
 		error_unterminated_group();
@@ -201,24 +191,23 @@ token_t rx_tokenise_group(const char **const chr, const rxobj_t rx_obj) {
 	if (or_token == NULL) {
 		// treat everything normally, and assign the token array to the group
 		group->tokens = tokens;
-		group->token_count = token_count;
 
 	} else { // if there _were_ linebars in the group, however...
 		// firstly, make sure there's enough space in the sections array
-		REALLOC_FOR(or_token->sections, or_token->count, sec_alloc_count, RxSection);
+		REALLOC_FOR(or_token->sections, or_token->count, sec_alloc_count, RxTokens);
 
 		// then append whatever's left to the sections array
 		//	(this is to make sure that everything after the last linebar is included)
-		or_token->sections[or_token->count++] = (RxSection){ tokens, token_count };
+		or_token->sections[or_token->count++] = tokens;
 
-		// this is just for my peace of mind, son I'm not discarding any data when I call `calloc`
-		assert(group->tokens == NULL);
-		assert(group->token_count == 0);
+		// this is just for my peace of mind, so I'm not discarding any data when I call `calloc`
+		assert(group->tokens.arr == NULL);
+		assert(group->tokens.len == 0);
 
 		// allocate some memory for the tokens array
-		group->tokens = calloc(1, sizeof(token_t));
+		group->tokens.arr = calloc(1, sizeof(token_t));
 		// which will be populated by a single token, that being the `RXT_OR` token
-		group->tokens[group->token_count++] = (token_t){ RXT_OR, (any_t)or_token };
+		group->tokens.arr[group->tokens.len++] = (token_t){ RXT_OR, (any_t)or_token };
 	}
 
 	/* ———————————————————————————————————————————————————— */

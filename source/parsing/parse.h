@@ -14,6 +14,12 @@
 #define MULT_BY_1_5(var) ((var) += (var) <= 1 ? 1 : (var) >> 1)
 #define CHR_TO_INT(char_) ((char_) - '0')
 
+#define REALLOC_FOR(arr, elem_count, alloc_count, type) do { \
+	if ((elem_count) + 1 > (alloc_count)) { \
+		(arr) = reallocf((arr), MULT_BY_1_5((alloc_count)) * sizeof(type)); \
+	} \
+} while (0)
+
 /// Represents infinity in ranged quantifiers.
 #define INF ((int)-1)
 #define NA ((any_t)0)
@@ -48,22 +54,23 @@ typedef struct	{ any_t id; RxGroupIDType type;	} groupid_t;
 /// @brief Generic token type.
 typedef struct { RxTokenType type; any_t value; } token_t;
 
+/// @brief Struct holding an array of tokens.
+typedef struct { token_t *arr; size_t len; } RxTokens;
+
 /* ———————————————————————————————————————————— */
 
 #define RETURN_TOKEN(type, value) return (token_t){ (RxTokenType)type, (any_t)value }
 
 /* ———————————————————————————————————————————— */
 
-typedef struct { char lhs, rhs;											} RxRangeToken;
-typedef struct { int lhs, rhs; bool has_qm;								} RxQuantToken;
-typedef struct { token_t *tokens; size_t token_count; bool is_inverse;	} RxSetToken;
-typedef struct { token_t *tokens; size_t token_count;					} RxSection;
-typedef struct { RxSection *sections; size_t count;						} RxOrToken;
+typedef struct { char lhs, rhs;						} RxRangeToken;
+typedef struct { int lhs, rhs; bool has_qm;			} RxQuantToken;
+typedef struct { RxTokens tokens; bool is_inverse;	} RxSetToken;
+typedef struct { RxTokens *sections; size_t count;	} RxOrToken;
 
 typedef struct {
 	groupid_t id;
-	token_t *tokens;
-	size_t token_count;
+	RxTokens tokens;
 
 	RxGroup type;
 	any_t info;
@@ -75,9 +82,7 @@ struct rx__regex {
 	uint64_t flags;
 	const char *string;
 
-	token_t *tokens;
-	size_t token_count;
-
+	RxTokens tokens;
 	uint16_t group_count;
 };
 
