@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "tokens.h"
 #include "parsing/parse.h"
 #include "errors/errors.h"
 
@@ -128,91 +129,8 @@ token_t rx_tokenise_group(const char **const chr, const rxobj_t rx_obj) {
 		};
 	}
 
-	/* ———————————————————————————————————————————————————— */
-
-	size_t t_alloc_count = 0;
-	RxTokens tokens = { .arr = NULL, .len = 0 };
-
-	size_t sec_alloc_count = 0;
-	RxOrToken *or_token = NULL;
-
-	// note: since I've exclusively used `calloc` to assign memory for `group`,
-	//	`group->tokens` will start at `NULL`, and `group->token_count` will start at `0`
-	while (*(++(*chr)) != '\0' && **chr != ')') {
-
-		/* ———————————————————————————————————————————————————— */
-
-		// allocate more memory for the individual tokens if needed
-		REALLOC_FOR(tokens.arr, tokens.len, t_alloc_count, token_t);
-
-		// get the actual tokens from 
-		// note: the `rx_tokenise_char` function may recurse into itself, as there may be nested groups to be parsed
-		const token_t token = rx_tokenise_char(chr, rx_obj);
-
-		// if the token isn't a `|` token, then simply add whichever token was found to the `tokens` array
-		if (token.type != RXT_OR) {
-			tokens.arr[tokens.len++] = token;
-			continue;
-		}
-
-		/* ———————————————————————————————————————————————————— */
-		// in the case of an `RXT_OR` token, though...
-
-		// firstly, initialise the `RXT_OR` token if it doesn't already exist
-		if (or_token == NULL) or_token = calloc(1, sizeof(RxOrToken));
-
-		// then, reallocate memory for the `sections` array, as needed
-		REALLOC_FOR(or_token->sections, or_token->count, sec_alloc_count, RxTokens);
-
-		// an `RXT_OR` token will consist of an array of "sections"
-		//	each of these sections will be an array of generic `token_t`s
-		// therefore, copy the information from the `tokens` array over into the `sections` array
-		or_token->sections[or_token->count++] = tokens;
-
-		// then reset all information about the `tokens` array, so it can start being filled again
-		t_alloc_count = 0,
-		tokens = (RxTokens){0};
-	}
-	
-	/* ———————————————————————————————————————————————————— */
-
-	// make sure that we actually reached the end of the group
-	if (**chr == '\0') {
-		if (or_token->sections != NULL) free(or_token->sections);
-		if (group->tokens.arr  != NULL) free(group->tokens.arr);
-		free(group);
-
-		error_unterminated_group();
-	}
-
-	/* ———————————————————————————————————————————————————— */
-
-	// if `or_token` was never initialised, then we know there was no linebar in the group
-	if (or_token == NULL) {
-		// treat everything normally, and assign the token array to the group
-		group->tokens = tokens;
-
-	} else { // if there _were_ linebars in the group, however...
-		// firstly, make sure there's enough space in the sections array
-		REALLOC_FOR(or_token->sections, or_token->count, sec_alloc_count, RxTokens);
-
-		// then append whatever's left to the sections array
-		//	(this is to make sure that everything after the last linebar is included)
-		or_token->sections[or_token->count++] = tokens;
-
-		// this is just for my peace of mind, so I'm not discarding any data when I call `calloc`
-		assert(group->tokens.arr == NULL);
-		assert(group->tokens.len == 0);
-
-		// allocate some memory for the tokens array
-		group->tokens.arr = calloc(1, sizeof(token_t));
-		// which will be populated by a single token, that being the `RXT_OR` token
-		group->tokens.arr[group->tokens.len++] = (token_t){ RXT_OR, (any_t)or_token };
-	}
-
-	/* ———————————————————————————————————————————————————— */
-
-	// finally, don't forget to set the group's type
+	// tokenise the contents of the group and set the group's type
+	group->tokens = rx_tokenise_sections(chr, rx_obj, ')');
 	group->type = type;
 
 	RETURN_TOKEN(RXT_GROUP, group);

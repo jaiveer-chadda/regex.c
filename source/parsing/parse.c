@@ -9,13 +9,12 @@
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 static inline rxobj_t rx_init(const char *const string, const uint64_t flags);
-static inline void rx_tokenise(const rxobj_t rx_obj);
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 rxobj_t rx_compile(const char *const string, const uint64_t flags) {
 	const rxobj_t rx_obj = rx_init(string, flags);
-	rx_tokenise(rx_obj);
+	rx_obj->tokens = rx_tokenise_sections(&rx_obj->string, rx_obj, '\0');
 
 	return rx_obj;
 }
@@ -31,29 +30,12 @@ static inline rxobj_t rx_init(const char *const string, const uint64_t flags) {
 
 	*rx_obj = (struct rx__regex){
 		.tokens = (RxTokens){ .arr = NULL, .len = 0 },
-		.string = string == NULL ? NULL : memdup(string, str_len),
+		.string = memdup(string, str_len),
 		.flags  = flags,
 		.group_count = 0,
 	};
 
 	return rx_obj;
-}
-
-/* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
-/* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
-
-static inline void rx_tokenise(const rxobj_t rx_obj) {
-	size_t alloc_count = 0;
-
-	for (const char *chr = rx_obj->string; *chr != '\0'; chr++) {
-		// reallocate new memory as its needed
-		//	on the first iteration, `rx_obj->tokens` will be `NULL`, but `reallocf` will allocate new memory for it
-		if (rx_obj->tokens.len + 1 > alloc_count) {
-			rx_obj->tokens.arr = reallocf(rx_obj->tokens.arr, MULT_BY_1_5(alloc_count) * sizeof(token_t));
-		}
-
-		rx_obj->tokens.arr[rx_obj->tokens.len++] = rx_tokenise_char(&chr, rx_obj);
-	}
 }
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
