@@ -3,6 +3,7 @@
 #ifndef ERRORS_H_
 #define ERRORS_H_
 
+void error_general(void);
 void error_invalid_flag(void);
 void error_invalid_quant(void);
 void error_invalid_range(void);

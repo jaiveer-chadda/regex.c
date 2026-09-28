@@ -67,13 +67,14 @@ token_t rx_tokenise_char(const char **const chr, const rxobj_t rx_obj) {
 		[[fallthrough]]; case '?': case '*': case '+': case '{': // ? * + {
 			return rx_tokenise_quant(chr);
 
-		[[fallthrough]]; /* case ')': */ case ']': case '}': // ) ] }
+		[[fallthrough]]; case ')': case ']': case '}': // ) ] }
 			// none of these should ever be encountered on their own
 			//	they should all be handled by their own individual functions
-			error_invalid_quant();
+			error_general();
+
+		case '.': RETURN_TOKEN(RXT_CLASS, '.');
 
 		case '|': RETURN_TOKEN(RXT_OR, NA);
-		case '.': RETURN_TOKEN(RXT_CLASS, '.');
 
 		case '(': return rx_tokenise_group(chr, rx_obj);
 		case '[': return rx_tokenise_set(chr);

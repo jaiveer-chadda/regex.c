@@ -57,6 +57,8 @@ typedef struct { RxTokenType type; any_t value; } token_t;
 typedef struct { char lhs, rhs;											} RxRangeToken;
 typedef struct { int lhs, rhs; bool has_qm;								} RxQuantToken;
 typedef struct { token_t *tokens; size_t token_count; bool is_inverse;	} RxSetToken;
+typedef struct { token_t *tokens; size_t token_count;					} RxSection;
+typedef struct { RxSection *sections; size_t count;						} RxOrToken;
 
 typedef struct {
 	groupid_t id;

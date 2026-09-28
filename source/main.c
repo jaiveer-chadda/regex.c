@@ -13,7 +13,7 @@
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-const char REGEX[] = "^[-\\w]+[0-9]*@\\w+?.(?<group>Mail|male\\))\\b(\\.(\\x40e)?[a-z]{2,}){1,3}$";
+const char REGEX[] = "^[-\\w]+[0-9]*@\\w+?.(?<group>Mail|male|meal\\))\\b(\\.(\\x40e)?[a-z]{2,}){1,3}$";
 const char INPUT[] =
 	"If you may please to think I love the King, And through him what's nearest to him, which is Your "	"\n"
 	"gracious self, embrace but my direction. If your more ponderous and settled project May suffer "	"\n"

@@ -24,7 +24,14 @@ static inline void rx_print_tokens(const token_t *const tokens, const size_t cou
 				);
 				break;
 
-			case RXT_OR: fputs("\33[32m|\33[m", stdout); break;
+			case RXT_OR:
+				const RxOrToken *const or = (RxOrToken*)token.value;
+				for (size_t j = 0; j < or->count; j++) {
+					if (j != 0) fputs("\33[32m|\33[m", stdout);
+					rx_print_tokens(or->sections[j].tokens, or->sections[j].token_count);
+				}
+				break;
+
 			case RXT_ANCHOR:
 				printf("\33[96m%c%c\33[m",
 					((char)token.value == '^' || (char)token.value == '$') ? '\0' : '\\',
