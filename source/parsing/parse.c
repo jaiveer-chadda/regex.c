@@ -9,12 +9,13 @@
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 static inline rxobj_t rx_init(const char *const string, const uint64_t flags);
+static inline void rx_tokenise(const rxobj_t rx_obj);
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 rxobj_t rx_compile(const char *const string, const uint64_t flags) {
 	const rxobj_t rx_obj = rx_init(string, flags);
-	rx_obj->tokens = rx_tokenise_sections(&rx_obj->string, rx_obj, '\0');
+	rx_tokenise(rx_obj);
 
 	return rx_obj;
 }
@@ -36,6 +37,13 @@ static inline rxobj_t rx_init(const char *const string, const uint64_t flags) {
 	};
 
 	return rx_obj;
+}
+
+/* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
+
+static inline void rx_tokenise(const rxobj_t rx_obj) {
+	const char **const chr = &rx_obj->string;
+	rx_obj->tokens = rx_tokenise_sections(chr, rx_obj, '\0');
 }
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
