@@ -115,7 +115,7 @@ static inline ssize_t rx_match_token(const token_t token, const char *chr) {
 
 		case RXT_CLASS: {
 			const char class = (char)token.value;
-			return -1;
+			return rx_match_class(class, *chr) ? 1 : -1;
 		}
 
 		case RXT_ANCHOR: {
