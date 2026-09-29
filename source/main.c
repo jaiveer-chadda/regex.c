@@ -14,6 +14,20 @@
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
+#ifdef DEBUG_MODE
+#	define DEBUG_INPUT(i) do {										\
+		printf("\n[%zu] = '\33[4m", i);								\
+		for (const char *chr = INPUTS[i]; *chr != '\0'; chr++) {	\
+			printf("%s", (*chr == ' ' ? "·" : (char[2]){ *chr }));	\
+		}															\
+		puts("\33[m'");												\
+	} while (0)
+#else 
+#	define DEBUG_INPUT(i) (void)i
+#endif
+
+/* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
+
 // const char REGEX[] = "^[-\\w]+|[0-9]*@\\w+?.(?<group>Mail|male|meal\\))\\b(\\.(\\x40e)?[a-z]{2,}){1,3}$";
 const char REGEX[] = "abc";
 
@@ -35,6 +49,7 @@ int main(const int argc, const char *const argv[]) {
 	print_regex(regex);
 
 	for (size_t i = 0; i < sizeof(INPUTS) / sizeof(INPUTS[0]); i++) {
+		DEBUG_INPUT(i);
 		rx_match(regex, INPUTS[i]);
 	}
 

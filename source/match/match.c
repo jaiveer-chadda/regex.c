@@ -10,6 +10,22 @@
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
+#ifdef DEBUG_MODE
+#	define DEBUG_MATCH(token, pchar, bmatch) do {										\
+		printf("\t\33[3%dm'%c' %c= { ", (bmatch) + 1, *(pchar), (bmatch) ? '=' : '!');	\
+		print_token((token), false);													\
+		printf("\33[3%dm }\33[m \n", (bmatch) + 1);										\
+	} while (0)
+#	define DEBUG_LEN(len) do { if (len != -1) printf("\t[%zd]\n", (len)); } while (0)
+#	define DEBUG_PUTS(str) fputs((str), stdout)
+#else
+#	define DEBUG_MATCH(token, pchar, bmatch) (void)(token), (void)(pchar), (void)(bmatch)
+#	define DEBUG_LEN(len) (void)(len)
+#	define DEBUG_PUTS(str) (void)(str)
+#endif
+
+/* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
+
 static inline bool rx_match_token(const token_t token, const char chr);
 static inline ssize_t rx_match_from_char(const RxTokens tokens, const char *const from_chr);
 
@@ -21,6 +37,7 @@ match_t rx_match(rxobj_t rx_obj, const char *const string) {
 
 	for (const char *chr = string; *chr != '\0'; chr++) {
 		const ssize_t match_len = rx_match_from_char(tokens, chr);
+		DEBUG_LEN(match_len);
 
 		if (match_len != -1) {
 			/* successfully matched */
@@ -39,9 +56,11 @@ match_t rx_match(rxobj_t rx_obj, const char *const string) {
 static inline ssize_t rx_match_from_char(const RxTokens tokens, const char *const from_chr) {
 	const char *chr;
 	size_t ti = 0;
+	DEBUG_PUTS("     ->");
 
 	for (chr = from_chr; *chr != '\0'; chr++) {
 		const bool matched = rx_match_token(token, *chr);
+		DEBUG_MATCH(token, chr, matched);
 
 		if (!matched) return -1;
 		if (matched && ++ti == tokens.len) break;
