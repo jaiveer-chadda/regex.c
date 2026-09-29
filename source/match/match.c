@@ -15,7 +15,7 @@
 #	define DEBUG_MATCH(token, pchar, mlen) do {		\
 		const bool bmatch = mlen != -1;				\
 		printf("\t[%ld] \33[3%dm'%c' %c= { ",		\
-			chr - from_chr,							\
+			(pchar) - from_chr,						\
 			(bmatch) + 1,							\
 			*(pchar),								\
 			(bmatch) ? '=' : '!'					\
@@ -57,6 +57,9 @@ matches_t rx_match(const rxobj_t rx_obj, const char *const string) {
 		REALLOC_FOR(matches.arr, matches.len, alloc_count, match_t);
 		// add match to `matches` array
 		matches.arr[matches.len++] = (match_t){ .idx = (size_t)(chr - string), .len = match_len };
+
+		// increment the char pointer by the match len, so we don't get overlapping matches 
+		chr += (intptr_t)match_len - 1;
 	}
 
 	return matches;
@@ -84,7 +87,7 @@ static inline ssize_t rx_match_from_char(const RxTokens tokens, const char *cons
 		/* ———————————————————————————————————————————————————— */
 
 		// if the match was successful, increment the character pointer by
-		chr += (ptrdiff_t)match_len;
+		chr += (intptr_t)match_len;
 
 		// if we've matched something, increment `ti` so that we can test the next char against the next token
 		// if we've reached the end of the tokens, we've found a match, so break and return
@@ -106,17 +109,12 @@ static inline ssize_t rx_match_from_char(const RxTokens tokens, const char *cons
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-variable"
 
+#define RETURN_BOOL(test) return (test) ? 1 : -1
+
 static inline ssize_t rx_match_token(const token_t token, const char *chr) {
 	switch (token.type) {
-		case RXT_LITERAL: {
-			const char tchar = (char)token.value;
-			return (*chr == tchar) ? 1 : -1;
-		}
-
-		case RXT_CLASS: {
-			const char class = (char)token.value;
-			return rx_match_class(class, *chr) ? 1 : -1;
-		}
+		case RXT_LITERAL: RETURN_BOOL(*chr ==  (char)token.value);
+		case RXT_CLASS	: RETURN_BOOL(rx_match_class(token.value, *chr));
 
 		case RXT_ANCHOR: {
 			const char anchor = (char)token.value;
