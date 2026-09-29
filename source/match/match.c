@@ -162,6 +162,12 @@ static inline ssize_t rx_match_token(const token_t token, const char *chr) {
 
 		case RXT_OR: {
 			const RxOrToken *const or_sections = (RxOrToken*)token.value;
+
+			for (size_t i = 0; i < or_sections->count; i++) {
+				const ssize_t match_size = rx_match_tokens(or_sections->sections[i], chr);
+				if (match_size != -1) return match_size;
+			}
+
 			return -1;
 		}
 
