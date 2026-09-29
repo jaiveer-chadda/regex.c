@@ -11,11 +11,13 @@
 #include "_chars.h"
 #include "_groups.h"
 #include "_escapes.h"
+#include "_classes.h"
 
 #ifndef RX__TYPE_IMPLEMENTATION
 #	undef RX__FLAG_TABLE
 #	undef RX__CHAR_TABLE
 #	undef RX__ESCS_TABLE
+#	undef RX__CLASS_TABLE
 #endif
 
 /* —————————————————————————————————————————————————————— */
@@ -30,7 +32,9 @@ typedef enum RxFlag	  RxFlag  ;
 /** An enum holding every semantically-significant regex character. */
 typedef enum RxChar	  RxChar  ;
 /** An enum holding all the types of groups that can be defined. */
-typedef enum RxGroup  RxGroup;
+typedef enum RxGroup  RxGroup ;
+/** An enum holding all the character classes that can be defined. */
+typedef enum RxClass  RxClass ;
 /** An enum holding every character that can appear after a backslash. */
 typedef enum RxEscape RxEscape;
 
