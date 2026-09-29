@@ -1,4 +1,4 @@
-/// @file output/print.c
+/// @file output/regex.c
 
 #include <stdio.h>
 #include "print.h"

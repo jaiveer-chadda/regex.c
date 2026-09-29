@@ -1,65 +1,48 @@
-/// @file main.c
+/// @file output/matches.c
 
 #include <stdio.h>
+#include <assert.h>
 
-#include "types/types.h"
-#include "match/match.h"
-#include "output/print.h"
-#include "parsing/parse.h"
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-variable"
-#pragma clang diagnostic ignored "-Wunused-function"
-#pragma clang diagnostic ignored "-Wunused-parameter"
+#include "print.h"
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-#ifdef DEBUG_MODE
-#	define DEBUG_INPUT(i) do {										\
-		printf("\n[%zu] = '\33[4m", i);								\
-		for (const char *chr = INPUTS[i]; *chr != '\0'; chr++) {	\
-			printf("%s", (*chr == ' ' ? "·" : (char[2]){ *chr }));	\
-		}															\
-		puts("\33[m'");												\
-	} while (0)
-#else 
-#	define DEBUG_INPUT(i) (void)i
-#endif
+#define RESET		"\33[m"
+#define COL_MATCH	"\33[1;91m"
+#define COL_STRING	"\33[38;5;147m"
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-// const char REGEX[] = "^[-\\w]+|[0-9]*@\\w+?.(?<group>Mail|male|meal\\))\\b(\\.(\\x40e)?[a-z]{2,}){1,3}$";
-const char REGEX[] = "abc";
-
-const char INPUTS[][32] = {
-	"abc",
-	" abc ",
-	"a bc",
-	"ab c",
-	"abc abc",
-	"thisabcisabcatestabcstring",
-	"cba",
-};
+static inline void rx_print_match(const match_t match, const char *const string);
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-int main(const int argc, const char *const argv[]) {
-	const rxobj_t regex = rx_compile(REGEX, RX_FLAGS[RXF_GLOBAL].bf | RX_FLAGS[RXF_MULTILINE].bf);
+void rx_print_matches(const matches_t matches) {
+	printf("'\33[38;5;194m%s"RESET"' (%zu match%s)\n", matches.string, matches.len, matches.len == 1 ? "" : "es");
 
-	fputs("regex = ", stdout); print_regex(regex); putchar('\n');
-
-	for (size_t i = 0; i < sizeof(INPUTS) / sizeof(INPUTS[0]); i++) {
-		DEBUG_INPUT(i);
-
-		const matches_t matches = rx_match(regex, INPUTS[i]);
-		rx_print_matches(matches);
+	for (size_t i = 0; i < matches.len; i++) {
+		rx_print_match(matches.arr[i], matches.string);
 	}
 
-	return 0;
+	putchar('\n');
 }
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-#pragma clang diagnostic pop
+static inline void rx_print_match(const match_t match, const char *const string) {
+	printf(
+		"'"
+		"%s%.*s%s"
+		"%s%.*s%s"
+		"%s%s%s"
+		"' (idx %zu -> %zu : %zu chars)\n",
 
-// spell:ignoreRegexp /(?<=\n#.+"-)W|\brx/g
+		COL_STRING,	(int)match.idx,	string,							RESET,
+		COL_MATCH ,	(int)match.len,	string + match.idx,				RESET,
+		COL_STRING,					string + match.idx + match.len,	RESET,
+
+		match.idx,	match.idx + match.len,	match.len
+	);
+}
+
+/* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
