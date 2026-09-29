@@ -33,33 +33,64 @@ RxTokens rx_tokenise_sections(const char **const chr, const rxobj_t rx_obj, cons
 		//	note: on the first iteration, `tokens.arr` will be `NULL`, but `reallocf` will allocate new memory for it
 		REALLOC_FOR(tokens.arr, tokens.len, t_alloc_count, token_t);
 
-		// get the actual tokens from 
 		// note: the `rx_tokenise_char` function may recurse into itself, as there may be nested groups to be parsed
 		const token_t token = rx_tokenise_char(chr, rx_obj);
 
-		// if the token isn't a `|` token, then simply add whichever token was found to the `tokens` array
-		if (token.type != RXT_OR) {
-			tokens.arr[tokens.len++] = token;
-			continue;
+		/* ———————————————————————————————————————————————————— */
+
+		switch (token.type) {
+			case RXT_OR:
+				// firstly, initialise the `RXT_OR` token if it doesn't already exist
+				if (or_token == NULL) or_token = calloc(1, sizeof(RxOrToken));
+
+				// then, reallocate memory for the `sections` array, as needed
+				REALLOC_FOR(or_token->sections, or_token->count, sec_alloc_count, RxTokens);
+
+				// an `RXT_OR` token will consist of an array of "sections"
+				//	each of these sections will be an array of generic `token_t`s
+				// therefore, copy the information from the `tokens` array over into the `sections` array
+				or_token->sections[or_token->count++] = tokens;
+
+				// then reset all information about the `tokens` array, so it can start being filled again
+				t_alloc_count = 0, tokens = (RxTokens){0};
+				break;
+
+			/* ———————————————————————————————————————————————————— */
+
+			case RXT_QUANT:
+				// make sure this isn't the first token in the array
+				if (tokens.len == 0) error_nothing_to_repeat();
+
+				// get the previous token in the array - this is the one that has the quantifier applied to it
+				const token_t prev = tokens.arr[tokens.len - 1];
+
+				// we can only repeat/quantify literals, backreferences, classes, groups, and sets
+				if (!( prev.type == RXT_LITERAL
+					|| prev.type == RXT_BACKREF
+					|| prev.type == RXT_CLASS
+					|| prev.type == RXT_GROUP
+					|| prev.type == RXT_SET
+				)) error_nothing_to_repeat();
+
+				// get the quantifier token created by `rx_tokenise_char`
+				RxQuantToken *const qtoken = (RxQuantToken*)token.value;
+				// then set the `repeat` field of the quantifier to the previous token
+				qtoken->repeat = prev;
+
+				// finally, overwrite the previous token with the new quantifier token
+				//	there's no need to increment the count, since the total length hasn't changed
+				tokens.arr[tokens.len - 1] = token;
+				break;
+
+			/* ———————————————————————————————————————————————————— */
+
+			default:
+				// if the token isn't a special case, then simply add whichever token was found to the `tokens` array
+				tokens.arr[tokens.len++] = token;
+				break;
 		}
 
 		/* ———————————————————————————————————————————————————— */
-		// in the case of an `RXT_OR` token, though...
-
-		// firstly, initialise the `RXT_OR` token if it doesn't already exist
-		if (or_token == NULL) or_token = calloc(1, sizeof(RxOrToken));
-
-		// then, reallocate memory for the `sections` array, as needed
-		REALLOC_FOR(or_token->sections, or_token->count, sec_alloc_count, RxTokens);
-
-		// an `RXT_OR` token will consist of an array of "sections"
-		//	each of these sections will be an array of generic `token_t`s
-		// therefore, copy the information from the `tokens` array over into the `sections` array
-		or_token->sections[or_token->count++] = tokens;
-
-		// then reset all information about the `tokens` array, so it can start being filled again
-		t_alloc_count = 0,
-		tokens = (RxTokens){0};
 	}
 
 	/* ——————————————————————————————————————————————————————————————————————————————————————————————————————————— */

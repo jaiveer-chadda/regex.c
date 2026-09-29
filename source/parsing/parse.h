@@ -31,13 +31,13 @@ typedef enum rx__tokentype {
 	RXT_LITERAL	, // 'a' 'b' 'c'
 	RXT_CLASS	, // '.' '\w' '\d' '\N', etc.
 
-	RXT_OR		, // '|'
+	RXT_OR		, // '|' /// Can only be the base token, or the exclusive subtoken of `RXT_GROUP`.
 	RXT_ANCHOR	, // '^' '$'
 	RXT_BACKREF	, // '\1' '\k<name>', etc.
 
 	RXT_GROUP	, // '('
 	RXT_SET		, // '['
-	RXT_RANGE	, // ['a-z']
+	RXT_RANGE	, // ['a-z'] /// Can only be a subtoken of `RXT_SET`.
 
 	RXT_QUANT	, // '+' '*' '?' '{1,2}'
 } RxTokenType;
@@ -64,9 +64,14 @@ typedef struct { token_t *arr; size_t len; } RxTokens;
 /* ———————————————————————————————————————————— */
 
 typedef struct { char lhs, rhs;						} RxRangeToken;
-typedef struct { int lhs, rhs; bool has_qm;			} RxQuantToken;
 typedef struct { RxTokens tokens; bool is_inverse;	} RxSetToken;
 typedef struct { RxTokens *sections; size_t count;	} RxOrToken;
+
+typedef struct {
+	token_t repeat;
+	int lhs, rhs;
+	bool has_qm;
+} RxQuantToken;
 
 typedef struct {
 	groupid_t id;

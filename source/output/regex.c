@@ -90,6 +90,8 @@ void print_token(const token_t token, const bool do_repr) {
 
 		CASE(RXT_QUANT);
 			const RxQuantToken *const quant = (RxQuantToken*)token.value;
+			print_token(quant->repeat, false);
+
 			putstr("\33[95m");
 
 			if		(quant->lhs == 0 && quant->rhs == 1	 ) putchar('?');
