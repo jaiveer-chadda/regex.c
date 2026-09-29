@@ -14,13 +14,15 @@
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
+// const char REGEX[] = "^[-\\w]+|[0-9]*@\\w+?.(?<group>Mail|male|meal\\))\\b(\\.(\\x40e)?[a-z]{2,}){1,3}$";
 const char REGEX[] = "abc";
 
 const char INPUTS[][32] = {
 	"abc",
-	"   abc    ",
-	"   a  bc",
-	"abc  abc",
+	" abc ",
+	"a bc",
+	"ab c",
+	"abc abc",
 	"cba",
 };
 
@@ -29,12 +31,10 @@ const char INPUTS[][32] = {
 int main(const int argc, const char *const argv[]) {
 	const rxobj_t regex = rx_compile(REGEX, RX_FLAGS[RXF_GLOBAL].bf | RX_FLAGS[RXF_MULTILINE].bf);
 
-	puts(REGEX);
+	printf("regex = \"\33[4m%s\33[m\"\n", REGEX);
 	print_regex(regex);
-	putchar('\n');
 
 	for (size_t i = 0; i < sizeof(INPUTS) / sizeof(INPUTS[0]); i++) {
-		puts(INPUTS[i]);
 		rx_match(regex, INPUTS[i]);
 	}
 

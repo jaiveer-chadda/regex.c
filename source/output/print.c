@@ -21,7 +21,7 @@ void print_token(const token_t token, const bool do_repr) {
 	if (do_repr) putstr("\33[91m(\33[93mtoken_t\33[91m){ ");
 
 	switch (token.type) {
-		CASE(RXT_LITERAL); putchar(token.value); break;
+		CASE(RXT_LITERAL); printf("\33[1;38;5;147m%c\33[m", (char)token.value); break;
 
 		CASE(RXT_CLASS);
 			printf("\33[34m%c%c\33[m",
