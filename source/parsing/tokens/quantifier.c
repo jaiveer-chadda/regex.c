@@ -30,7 +30,7 @@ token_t rx_tokenise_quant(const char **const chr) {
 			// if the char we ended up with is a closing brace, then we know that the quant was in the form `{n}`
 			// if the char isn't a closing brace, and is anything other than a comma, then the quant is invalid
 			// if the char _is_ a comma, and the next char after it is a `}`, then the quant was in the form `{n,}`
-			if ( **chr		== '}') { size[1] = size[0]	; (*chr)++; break;	} // {2}  -> {2,2}
+			if ( **chr		== '}') { size[1] = size[0]	;			break;	} // {2}  -> {2,2}
 			if ( **chr		!= ',') { error_invalid_quant();				} // {ab} -> error
 			if (*(*chr + 1)	== '}') { size[1] = INF		; (*chr)++; break;	} // {2,} -> {2,∞}
 
