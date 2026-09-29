@@ -130,8 +130,9 @@ static inline ssize_t rx_match_token(const token_t token, const char *chr) {
 
 		case RXT_QUANT: {
 			const RxQuantToken *const quant = (RxQuantToken*)token.value;
-			int i = 0;
+			size_t i = 0;
 
+			/// @todo simplify
 			// firstly, iterate through as many tokens as we know should definitely exist
 			for (; i < quant->lhs; i++) {
 				// all of them _have_ to match - if any of them don't, return failure
@@ -144,7 +145,7 @@ static inline ssize_t rx_match_token(const token_t token, const char *chr) {
 				if (rx_match_token(quant->repeat, chr + i) == -1) break;
 			}
 
-			return i; // return the number of chars that were (successfully) parsed
+			return (ssize_t)i; // return the number of chars that were (successfully) parsed
 		}
 
 		case RXT_OR: {

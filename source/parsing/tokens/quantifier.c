@@ -13,7 +13,7 @@ static inline bool chr_is_dig(const char chr) { return '0' <= (chr) && (chr) <= 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 token_t rx_tokenise_quant(const char **const chr) {
-	int size[2] = {0};
+	size_t size[2] = {0};
 
 	// translate each of the quantifier types into their `{n,m}` equivalents
 	switch (**chr) {

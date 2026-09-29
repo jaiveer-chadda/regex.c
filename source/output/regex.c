@@ -97,10 +97,10 @@ void print_token(const token_t token, const bool do_repr) {
 			if		(quant->lhs == 0 && quant->rhs == 1	 ) putchar('?');
 			else if	(quant->lhs == 0 && quant->rhs == INF) putchar('*');
 			else if	(quant->lhs == 1 && quant->rhs == INF) putchar('+');
-			else if	(quant->lhs ==		quant->rhs		 ) printf("{%d}", quant->lhs);
+			else if	(quant->lhs ==		quant->rhs		 ) printf("{%zu}", quant->lhs);
 			else {
-				printf("{%d,", quant->lhs);
-				if (quant->rhs != INF) printf("%d", quant->rhs);
+				printf("{%zu,", quant->lhs);
+				if (quant->rhs != INF) printf("%zu", quant->rhs);
 				putchar('}');
 			}
 

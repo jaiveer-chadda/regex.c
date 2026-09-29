@@ -21,7 +21,7 @@
 } while (0)
 
 /// Represents infinity in ranged quantifiers.
-#define INF ((int)-1)
+#define INF ((size_t)UINT64_MAX)
 #define NA ((any_t)0)
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
@@ -71,7 +71,7 @@ typedef struct { RxTokens *sections; size_t count;	} RxOrToken;
 
 typedef struct {
 	token_t repeat;
-	int lhs, rhs;
+	size_t lhs, rhs;
 	bool has_qm;
 } RxQuantToken;
 
