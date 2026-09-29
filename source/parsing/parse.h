@@ -28,6 +28,7 @@
 
 typedef enum rx__tokentype {
 	RXT_INVALID	,
+	RXT_EMPTY	, // ∅
 
 	RXT_LITERAL	, // char			:  'a' 'b' 'c'
 	RXT_CLASS	, // char			:  '.' '\w' '\d' '\N', etc.

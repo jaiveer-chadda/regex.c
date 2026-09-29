@@ -108,8 +108,10 @@ void print_token(const token_t token, const bool do_repr) {
 			putstr("\33[m");
 			break;
 
-		CASE(RXT_INVALID); break;
-		default: break;
+		CASE(RXT_EMPTY)	 ; putstr("\33[2m∅\33[m"); break;
+
+		CASE(RXT_INVALID); printf("\33[31minvalid case\33[m, .val = %lld", token.value); break;
+		default			 : printf("\33[31munknown case\33[m, .val = %lld", token.value); break;
 	}
 
 	if (do_repr) puts(" \33[91m}\33[;2m;\33[m");

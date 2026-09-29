@@ -22,14 +22,14 @@
 		}															\
 		puts("\33[m'");												\
 	} while (0)
-#else 
+#else
 #	define DEBUG_INPUT(i) (void)i
 #endif
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 // const char REGEX[] = "^[-\\w]+|[0-9]*@\\w+?.(?<group>Mail|male|meal\\))\\b(\\.(\\x40e)?[a-z]{2,}){1,3}$";
-const char REGEX[] = "\\d+|[a-z]+";
+const char REGEX[] = "\\d+|[a-z]+|";
 
 const char INPUTS[][64] = {
 	"0 ",

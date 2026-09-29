@@ -1,6 +1,5 @@
 /// @file parsing/tokens/sections.c
 
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "errors/errors.h"
@@ -42,6 +41,14 @@ RxTokens rx_tokenise_sections(const char **const chr, const rxobj_t rx_obj, cons
 			case RXT_OR:
 				// firstly, initialise the `RXT_OR` token if it doesn't already exist
 				if (or_token == NULL) or_token = calloc(1, sizeof(RxOrToken));
+
+				// before adding anything, make sure there are actually some tokens in the array
+				if (tokens.len == 0) {
+					// if there aren't, then allocate space for one token
+					tokens.arr = reallocf(tokens.arr, ( tokens.len = 1 ) * sizeof(token_t));
+					// then assign an empty token as the sole element of the array
+					tokens.arr[0] = (token_t){ .type = RXT_EMPTY };
+				}
 
 				// then, reallocate memory for the `sections` array, as needed
 				REALLOC_FOR(or_token->sections, or_token->count, sec_alloc_count, RxTokens);
@@ -98,12 +105,20 @@ RxTokens rx_tokenise_sections(const char **const chr, const rxobj_t rx_obj, cons
 	// make sure that we actually parsed the whole thing
 	if (**chr != end_chr) {
 		if (or_token->sections != NULL) free(or_token->sections);
-		if (tokens.arr  != NULL) free(tokens.arr);
+		if (tokens.arr != NULL) free(tokens.arr);
 
 		error_unterminated_group();
 	}
 
 	/* ——————————————————————————————————————————————————————————————————————————————————————————————————————————— */
+
+	// before anything else, check if there are actually any tokens in the array
+	if (tokens.len == 0) {
+		// if not, make sure there's space for one token
+		tokens.arr = reallocf(tokens.arr, ( tokens.len = 1 ) * sizeof(token_t));
+		// then assign an empty token as the sole element of the array
+		tokens.arr[0] = (token_t){ .type = RXT_EMPTY };
+	}
 
 	// if `or_token` was never initialised, then we know there was no linebar in the group
 	if (or_token != NULL) {

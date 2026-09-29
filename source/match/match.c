@@ -76,6 +76,10 @@ static inline ssize_t rx_match_tokens(const RxTokens tokens, const char *chr) {
 	/* ———————————————————————————————————————————————————— */
 
 	while (*chr != '\0') {
+		if (tokens.arr == NULL) {
+
+		}
+
 		const token_t token = tokens.arr[ti];
 
 		// check if this character can be matched by this token
@@ -164,7 +168,10 @@ static inline ssize_t rx_match_token(const token_t token, const char *chr) {
 			const RxOrToken *const or_sections = (RxOrToken*)token.value;
 
 			for (size_t i = 0; i < or_sections->count; i++) {
-				const ssize_t match_size = rx_match_tokens(or_sections->sections[i], chr);
+				const RxTokens section = or_sections->sections[i];
+				if (section.len == 1 && section.arr[0].type == RXT_EMPTY) return true;
+
+				const ssize_t match_size = rx_match_tokens(section, chr);
 				if (match_size != -1) return match_size;
 			}
 
@@ -201,6 +208,15 @@ static inline ssize_t rx_match_token(const token_t token, const char *chr) {
 		case RXT_RANGE: {
 			const RxRangeToken *const range = (RxRangeToken*)token.value;
 			RETURN_BOOL(range->lhs <= *chr && *chr <= range->rhs);
+		}
+
+		/* ———————————————————————————————————————————————————— */
+
+		case RXT_EMPTY: {
+			// this shouldn't ever be accessed directly
+			//	each token should have its own way of dealing with `RXT_EMPTY` cases
+			assert("RXT_EMPTY accessed via `rx_match_token` switch/case statement" && false);
+			return true;
 		}
 
 		/* ———————————————————————————————————————————————————— */
