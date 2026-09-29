@@ -5,8 +5,13 @@
 
 #include "parsing/parse.h"
 
-typedef struct { size_t *indices, *lengths; } match_t;
+typedef struct match_s { size_t idx, len; } match_t;
 
-match_t rx_match(rxobj_t rx_obj, const char *const string);
+typedef struct matches_s {
+	const char *const string;
+	match_t *arr; size_t len;
+} matches_t;
+
+matches_t rx_match(const rxobj_t rx_obj, const char *const string);
 
 #endif /* !MATCH_H_ */

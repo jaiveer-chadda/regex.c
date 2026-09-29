@@ -31,24 +31,23 @@ static inline ssize_t rx_match_from_char(const RxTokens tokens, const char *cons
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-match_t rx_match(rxobj_t rx_obj, const char *const string) {
-	match_t matches = {0};
-	const RxTokens tokens = rx_obj->tokens;
+matches_t rx_match(const rxobj_t rx_obj, const char *const string) {
+	matches_t matches = { .arr = NULL, .len = 0, .string = string };
 
 	// iterate through the test string, trying to find a match starting from each character
 	for (const char *chr = string; *chr != '\0'; chr++) {
-		const ssize_t match_len = rx_match_from_char(tokens, chr);
+		const ssize_t match_len = rx_match_from_char(rx_obj->tokens, chr);
 		DEBUG_LEN(match_len);
 
 		// if we didn't find a match, then move on, and start trying to find a match starting from the next character
 		if (match_len == -1) continue;
 
 		// -- successfully matched --
-		(void)matches; // add match to `matches` array
+		// add match to `matches` array
+		(void)matches;
 	}
 
-	(void)rx_match_from_char;
-	return (match_t){0};
+	return matches;
 }
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */

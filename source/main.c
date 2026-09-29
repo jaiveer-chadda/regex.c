@@ -50,7 +50,7 @@ int main(const int argc, const char *const argv[]) {
 
 	for (size_t i = 0; i < sizeof(INPUTS) / sizeof(INPUTS[0]); i++) {
 		DEBUG_INPUT(i);
-		rx_match(regex, INPUTS[i]);
+		const matches_t matches = rx_match(regex, INPUTS[i]);
 	}
 
 	return 0;
