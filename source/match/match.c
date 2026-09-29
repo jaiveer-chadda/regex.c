@@ -12,12 +12,18 @@
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 #ifdef DEBUG_MODE
-#	define DEBUG_MATCH(token, pchar, bmatch) do {										\
-		printf("\t\33[3%dm'%c' %c= { ", (bmatch) + 1, *(pchar), (bmatch) ? '=' : '!');	\
-		print_token((token), false);													\
-		printf("\33[3%dm }\33[m \n", (bmatch) + 1);										\
+#	define DEBUG_MATCH(token, pchar, mlen) do {		\
+		const bool bmatch = mlen != -1;				\
+		printf("\t[%ld] \33[3%dm'%c' %c= { ",		\
+			chr - from_chr,							\
+			(bmatch) + 1,							\
+			*(pchar),								\
+			(bmatch) ? '=' : '!'					\
+		);											\
+		print_token((token), false);				\
+		printf("\33[3%dm }\33[m \n", (bmatch) + 1);	\
 	} while (0)
-#	define DEBUG_LEN(len) do { if (len != -1) printf("\t[%zd]\n", (len)); } while (0)
+#	define DEBUG_LEN(len) do { if (len != -1) printf("\t    len = [%zd]\n", (len)); } while (0)
 #	define DEBUG_PUTS(str) fputs((str), stdout)
 #else
 #	define DEBUG_MATCH(token, pchar, bmatch) (void)(token), (void)(pchar), (void)(bmatch)
@@ -27,7 +33,7 @@
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-static inline bool rx_match_token(const token_t token, const char chr);
+static inline ssize_t rx_match_token(const token_t token, const char *chr);
 static inline ssize_t rx_match_from_char(const RxTokens tokens, const char *const from_chr);
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
@@ -59,34 +65,38 @@ matches_t rx_match(const rxobj_t rx_obj, const char *const string) {
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 static inline ssize_t rx_match_from_char(const RxTokens tokens, const char *const from_chr) {
-	DEBUG_PUTS("     ->");
+	DEBUG_PUTS(" —————→");
 	size_t ti = 0;
 
-	const char *chr;
-	for (chr = from_chr; *chr != '\0'; chr++) {
+	/* ———————————————————————————————————————————————————— */
+
+	const char *chr = from_chr;
+	while (*chr != '\0') {
 		const token_t token = tokens.arr[ti];
 
 		// check if this character can be matched by this token
-		const bool matched = rx_match_token(token, *chr);
-		DEBUG_MATCH(token, chr, matched);
+		const ssize_t match_len = rx_match_token(token, chr);
+		DEBUG_MATCH(token, chr, match_len);
 
 		// if we couldn't find a match, then move on, and start testing from the next character
-		if (!matched) return -1;
+		if (match_len == -1) return -1;
 
-		// every iteration, check if we've matched something,
-		//	if we have, then increment `ti`, so that we can test against the next token
+		/* ———————————————————————————————————————————————————— */
+
+		// if the match was successful, increment the character pointer by
+		chr += (ptrdiff_t)match_len;
+
+		// if we've matched something, increment `ti` so that we can test the next char against the next token
 		// if we've reached the end of the tokens, we've found a match, so break and return
 		if (++ti == tokens.len) break;
 	}
 
 	/* ———————————————————————————————————————————————————— */
 
-	assert((ti != tokens.len) == (*chr == '\0'));
-
 	// ensure that the match has been completed - i.e., all tokens have been parsed
 	if (ti != tokens.len) return -1;
 	// if all tokens _have_ been parsed, then calculate the match's length and return
-	return (ssize_t)(chr - from_chr) + 1;
+	return (ssize_t)(chr - from_chr);
 }
 
 #undef token
@@ -96,53 +106,67 @@ static inline ssize_t rx_match_from_char(const RxTokens tokens, const char *cons
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-variable"
 
-static inline bool rx_match_token(const token_t token, const char chr) {
+static inline ssize_t rx_match_token(const token_t token, const char *chr) {
 	switch (token.type) {
 		case RXT_LITERAL: {
 			const char tchar = (char)token.value;
-			return chr == tchar;
+			return (*chr == tchar) ? 1 : -1;
 		}
 
 		case RXT_CLASS: {
 			const char class = (char)token.value;
-			return false;
+			return -1;
 		}
 
 		case RXT_ANCHOR: {
 			const char anchor = (char)token.value;
-			return false;
+			return -1;
 		}
 
 		case RXT_BACKREF: {
 			const groupid_t *const groupref = (groupid_t*)token.value;
-			return false;
+			return -1;
 		}
 
 		case RXT_QUANT: {
 			const RxQuantToken *const quant = (RxQuantToken*)token.value;
-			return false;
+			int i = 0;
+
+			// firstly, iterate through as many tokens as we know should definitely exist
+			for (; i < quant->lhs; i++) {
+				// all of them _have_ to match - if any of them don't, return failure
+				if (rx_match_token(quant->repeat, chr + i) == -1) return -1;
+			}
+
+			// then try matching from `i = lhs` to `i = rhs`
+			for (; i < quant->rhs; i++) {
+				// if anything doesn't match, then that's fine - just consume the characters, and return success
+				if (rx_match_token(quant->repeat, chr + i) == -1) break;
+			}
+
+			return i; // return the number of chars that were (successfully) parsed
 		}
 
 		case RXT_OR: {
 			const RxOrToken *const or_sections = (RxOrToken*)token.value;
-			return false;
+			return -1;
 		}
 
 		case RXT_GROUP: {
 			const RxGroupToken *const group = (RxGroupToken*)token.value;
-			return false;
+			return -1;
 		}
 
 		case RXT_SET: {
 			const RxSetToken *const set = (RxSetToken*)token.value;
-			return false;
+			return -1;
 		}
 
 		/* ———————————————————————————————————————————————————— */
 
 		[[fallthrough]]; case RXT_RANGE: case RXT_INVALID: default:
 			error_impossible_case();
-			return false; // unreachable
+			return -1; // unreachable
 	}
 }
 

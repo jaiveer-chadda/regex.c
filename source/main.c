@@ -31,19 +31,14 @@
 // const char REGEX[] = "^[-\\w]+|[0-9]*@\\w+?.(?<group>Mail|male|meal\\))\\b(\\.(\\x40e)?[a-z]{2,}){1,3}$";
 const char REGEX[] = "ab{2,4}c";
 
-const char INPUTS[][32] = {
+const char INPUTS[][64] = {
 	"abbc",
-	// "abc",
-	// "abbbc",
-	// // "abbc",
-	// " ac",
-	// "abbbbbc",
-	// // " abc ",
-	// // "a bc",
-	// // "ab c",
-	// // "abc abc",
-	// // "thisabcisabcatestabcstring",
-	// // "cba",
+	"  abbbc  ",
+	"abbbbbc",
+	" abc ",
+	"abbbc abbc",
+	"thisabbbcisabcabbabbbbcctestabcstring",
+	"cba",
 };
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
