@@ -109,9 +109,11 @@ static inline ssize_t rx_match_from_char(const RxTokens tokens, const char *cons
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-variable"
 
-#define RETURN_BOOL(test) return (test) ? 1 : -1
+#define RETURN_BOOL(test) return ((test) ? 1 : -1)
 
 static inline ssize_t rx_match_token(const token_t token, const char *chr) {
+	if (*chr == '\0') return -1;
+
 	switch (token.type) {
 		case RXT_LITERAL: RETURN_BOOL(*chr ==  (char)token.value);
 		case RXT_CLASS	: RETURN_BOOL(rx_match_class(token.value, *chr));
@@ -158,12 +160,28 @@ static inline ssize_t rx_match_token(const token_t token, const char *chr) {
 
 		case RXT_SET: {
 			const RxSetToken *const set = (RxSetToken*)token.value;
-			return -1;
+
+			// iterate through all of the set's tokens, checking each one for a match
+			for (size_t i = 0; i < set->tokens.len; i++) {
+				if (rx_match_token(set->tokens.arr[i], chr) != -1) {
+					// if we find a match and we're in inverse mode, then return failure
+					// if we find a match and we're _not_ in inverse mode, return success
+					return set->is_inverse ? -1 : 1;
+				}
+			}
+
+			// if we reached the end in inverse mode, it's a success, and in normal mode, a failure
+			return set->is_inverse ? 1 : -1;
+		}
+
+		case RXT_RANGE: {
+			const RxRangeToken *const range = (RxRangeToken*)token.value;
+			RETURN_BOOL(range->lhs <= *chr && *chr <= range->rhs);
 		}
 
 		/* ———————————————————————————————————————————————————— */
 
-		[[fallthrough]]; case RXT_RANGE: case RXT_INVALID: default:
+		[[fallthrough]]; case RXT_INVALID: default:
 			error_impossible_case();
 			return -1; // unreachable
 	}

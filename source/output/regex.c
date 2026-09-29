@@ -77,8 +77,8 @@ void print_token(const token_t token, const bool do_repr) {
 			break;
 
 		CASE(RXT_SET);
-			putstr("\33[33m[\33[m");
 			const RxSetToken *const set = (RxSetToken*)token.value;
+			printf("\33[33m[%s\33[m", set->is_inverse ? "^" : "");
 			rx_print_tokens(set->tokens);
 			putstr("\33[33m]\33[m");
 			break;
