@@ -1,5 +1,7 @@
 /// @file parsing/tokens/escape.c
 
+#include <stdlib.h>
+
 #include "parsing/parse.h"
 #include "errors/errors.h"
 
@@ -31,11 +33,12 @@ token_t rx_tokenise_escape(const char **const chr) {
 		/* ———————————————————————————————————————————————————— */
 
 		// set up backreferences with a reference to their name
-		//	this value is temporary tho - I'll make a proper backreference object later
-		/// @todo make a proper backreference object
 		[[fallthrough]]; // \1 -> \9
 		case RXX_1: case RXX_2: case RXX_3: case RXX_4: case RXX_5: case RXX_6: case RXX_7: case RXX_8: case RXX_9:
-			RETURN_TOKEN(RXT_BACKREF, CHR_TO_INT(**chr));
+			groupid_t *const groupref = calloc(1, sizeof(groupid_t));
+			*groupref = (groupid_t){ .type = GIDT_INT, .id = CHR_TO_INT(**chr) };
+
+			RETURN_TOKEN(RXT_BACKREF, groupref);
 
 		/* ———————————————————————————————————————————————————— */
 
