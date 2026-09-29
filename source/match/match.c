@@ -35,73 +35,58 @@ match_t rx_match(rxobj_t rx_obj, const char *const string) {
 	match_t matches = {0};
 	const RxTokens tokens = rx_obj->tokens;
 
+	// iterate through the test string, trying to find a match starting from each character
 	for (const char *chr = string; *chr != '\0'; chr++) {
 		const ssize_t match_len = rx_match_from_char(tokens, chr);
 		DEBUG_LEN(match_len);
 
-		if (match_len != -1) {
-			/* successfully matched */
-			/* add match to `matches` array */
-			(void)matches;
-		}
+		// if we didn't find a match, then move on, and start trying to find a match starting from the next character
+		if (match_len == -1) continue;
+
+		// -- successfully matched --
+		(void)matches; // add match to `matches` array
 	}
 
+	(void)rx_match_from_char;
 	return (match_t){0};
 }
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-#define token (tokens.arr[ti])
-
 static inline ssize_t rx_match_from_char(const RxTokens tokens, const char *const from_chr) {
-	const char *chr;
-	size_t ti = 0;
 	DEBUG_PUTS("     ->");
+	size_t ti = 0;
 
+	const char *chr;
 	for (chr = from_chr; *chr != '\0'; chr++) {
+		const token_t token = tokens.arr[ti];
+
+		// check if this character can be matched by this token
 		const bool matched = rx_match_token(token, *chr);
 		DEBUG_MATCH(token, chr, matched);
 
+		// if we couldn't find a match, then move on, and start testing from the next character
 		if (!matched) return -1;
+
+		// every iteration, check if we've matched something,
+		//	if we have, then increment `ti`, so that we can test against the next token
+		// if we've reached the end of the tokens
 		if (matched && ++ti == tokens.len) break;
 	}
 
+	// ensure that the match has been completed - i.e., all tokens have been parsed
 	if (ti != tokens.len) return -1;
+	// if all tokens _have_ been parsed, then calculate the match's length and return
 	return (ssize_t)(chr - from_chr) + 1;
 }
 
 #undef token
 
-/*
-	for (size_t ti = 0; ti != tokens.len; ti++) {
-		size_t lti = ti; // local `ti`
-		//
-		for (; *chr != '\0'; chr++) {
-			const token_t token = tokens.arr[lti];
-			const bool matched = rx_match_token(token, *chr);
-			//
-			DEBUG_MATCH(token, chr, matched);
-			//
-			if (matched) {
-				if (lti++ >= tokens.len - 1) goto break_all;
-			}
-		}
-		//
-		putchar('\n');
-	}
-*/
-
-
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 static inline bool rx_match_token(const token_t token, const char chr) {
-	bool did_match = false;
-
 	switch (token.type) {
-		case RXT_LITERAL:
-			did_match = chr == (char)token.value;
-			break;
-
+		case RXT_LITERAL: return chr == (char)token.value;
 		case RXT_CLASS	: break;
 		case RXT_OR		: break;
 		case RXT_ANCHOR	: break;
@@ -114,7 +99,7 @@ static inline bool rx_match_token(const token_t token, const char chr) {
 			error_impossible_case();
 	}
 
-	return did_match;
+	return false;
 }
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
