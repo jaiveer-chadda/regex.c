@@ -32,13 +32,15 @@
 const char REGEX[] = "ab{2,4}c";
 
 const char INPUTS[][64] = {
+	"ac",
+	"abc",
 	"abbc",
-	"  abbbc  ",
+	"abbbc",
+	"abbbbc",
 	"abbbbbc",
-	" abc ",
-	"abbbc abbc",
-	"thisabbbcisabcabbabbbbcctestabcstring",
-	"cba",
+	"abbbbbbc",
+	"ab",
+	"bc",
 };
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
