@@ -144,22 +144,26 @@ static inline ssize_t rx_match_token(const token_t token, const char *chr) {
 
 		case RXT_QUANT: {
 			const RxQuantToken *const quant = (RxQuantToken*)token.value;
-			size_t i = 0;
+			const char *const start = chr, *pchar = chr;
 
 			// try and match the token the maximum number of times specified by the quantifier
-			for (; i < quant->rhs; i++) {
+			for (size_t count = 0; count < quant->rhs; count++) {
+				const ssize_t match_len = rx_match_token(quant->repeat, pchar);
+
 				// if at any point it fails to match...
-				if (rx_match_token(quant->repeat, chr + i) == -1) {
+				if (match_len == -1) {
 					// check if we're still within the bounds of the minimum repetition count (the lhs)
 					//	if we are, then we haven't done enough iterations - return failure
-					if (i < quant->lhs) return -1;
+					if (count < quant->lhs) return -1;
 					// if, however, we're trying to match something _after_ we've passed the minimum rep count
 					//	then there's nothing to be done - break out of the loop, and return the match's length
 					break;
 				}
+
+				pchar += match_len; // move the char pointer forward by the length of the match
 			}
 
-			return (ssize_t)i; // return the number of chars that were (successfully) parsed
+			return (ssize_t)(pchar - start); // return the number of chars that were (successfully) parsed
 		}
 
 		/* ———————————————————————————————————————————————————— */
