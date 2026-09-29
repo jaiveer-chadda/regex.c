@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "types/types.h"
+#include "match/match.h"
 #include "output/print.h"
 #include "parsing/parse.h"
 
@@ -13,15 +14,15 @@
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-const char REGEX[] = "^[-\\w]+|[0-9]*@\\w+?.(?<group>Mail|male|meal\\))\\b(\\.(\\x40e)?[a-z]{2,}){1,3}$";
-const char INPUT[] =
-	"If you may please to think I love the King, And through him what's nearest to him, which is Your "	"\n"
-	"gracious self, embrace but my direction. If your more ponderous and settled project May suffer "	"\n"
-	"alteration, on mine honour, I'll point you where you shall have such receiving As shall become"	"\n"
-	" your Highness; where you may Enjoy your mistress, from the whom, I see, There's no disjunction "	"\n"
-	"to be made but by, As heavens forfend! your ruin- marry her; And with my best endeavours in your"	"\n"
-	" absence Your discontenting father strive to qualify,"
-;
+const char REGEX[] = "abc";
+
+const char INPUTS[][32] = {
+	"abc",
+	"   abc    ",
+	"   a  bc",
+	"abc  abc",
+	"cba",
+};
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
@@ -30,6 +31,12 @@ int main(const int argc, const char *const argv[]) {
 
 	puts(REGEX);
 	print_regex(regex);
+	putchar('\n');
+
+	for (size_t i = 0; i < sizeof(INPUTS) / sizeof(INPUTS[0]); i++) {
+		puts(INPUTS[i]);
+		rx_match(regex, INPUTS[i]);
+	}
 
 	return 0;
 }
