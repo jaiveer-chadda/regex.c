@@ -1,6 +1,7 @@
 /// @file match/match.c
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
@@ -33,6 +34,7 @@ static inline ssize_t rx_match_from_char(const RxTokens tokens, const char *cons
 
 matches_t rx_match(const rxobj_t rx_obj, const char *const string) {
 	matches_t matches = { .arr = NULL, .len = 0, .string = string };
+	size_t alloc_count = 0;
 
 	// iterate through the test string, trying to find a match starting from each character
 	for (const char *chr = string; *chr != '\0'; chr++) {
@@ -43,8 +45,10 @@ matches_t rx_match(const rxobj_t rx_obj, const char *const string) {
 		if (match_len == -1) continue;
 
 		// -- successfully matched --
+		// allocate memory for `matches.arr` as needed
+		REALLOC_FOR(matches.arr, matches.len, alloc_count, match_t);
 		// add match to `matches` array
-		(void)matches;
+		matches.arr[matches.len++] = (match_t){ .idx = (size_t)(chr - string), .len = match_len };
 	}
 
 	return matches;
