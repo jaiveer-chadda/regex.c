@@ -44,7 +44,9 @@ matches_t rx_match(const rxobj_t rx_obj, const char *const string) {
 		// if we didn't find a match, then move on, and start trying to find a match starting from the next character
 		if (match_len == -1) continue;
 
+		/* ———————————————————————————————————————————————————— */
 		// -- successfully matched --
+
 		// allocate memory for `matches.arr` as needed
 		REALLOC_FOR(matches.arr, matches.len, alloc_count, match_t);
 		// add match to `matches` array
@@ -73,9 +75,13 @@ static inline ssize_t rx_match_from_char(const RxTokens tokens, const char *cons
 
 		// every iteration, check if we've matched something,
 		//	if we have, then increment `ti`, so that we can test against the next token
-		// if we've reached the end of the tokens
-		if (matched && ++ti == tokens.len) break;
+		// if we've reached the end of the tokens, we've found a match, so break and return
+		if (++ti == tokens.len) break;
 	}
+
+	/* ———————————————————————————————————————————————————— */
+
+	assert((ti != tokens.len) == (*chr == '\0'));
 
 	// ensure that the match has been completed - i.e., all tokens have been parsed
 	if (ti != tokens.len) return -1;
@@ -87,22 +93,61 @@ static inline ssize_t rx_match_from_char(const RxTokens tokens, const char *cons
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-variable"
+
 static inline bool rx_match_token(const token_t token, const char chr) {
 	switch (token.type) {
-		case RXT_LITERAL: return chr == (char)token.value;
-		case RXT_CLASS	: break;
-		case RXT_OR		: break;
-		case RXT_ANCHOR	: break;
-		case RXT_BACKREF: break;
-		case RXT_GROUP	: break;
-		case RXT_SET	: break;
-		case RXT_QUANT	: break;
+		case RXT_LITERAL: {
+			const char tchar = (char)token.value;
+			return chr == tchar;
+		}
+
+		case RXT_CLASS: {
+			const char class = (char)token.value;
+			return false;
+		}
+
+		case RXT_ANCHOR: {
+			const char anchor = (char)token.value;
+			return false;
+		}
+
+		case RXT_BACKREF: {
+			const groupid_t *const groupref = (groupid_t*)token.value;
+			return false;
+		}
+
+		case RXT_QUANT: {
+			const RxQuantToken *const quant = (RxQuantToken*)token.value;
+			return false;
+		}
+
+		case RXT_OR: {
+			const RxOrToken *const or_sections = (RxOrToken*)token.value;
+			return false;
+		}
+
+		case RXT_GROUP: {
+			const RxGroupToken *const group = (RxGroupToken*)token.value;
+			return false;
+		}
+
+		case RXT_SET: {
+			const RxSetToken *const set = (RxSetToken*)token.value;
+			return false;
+		}
+
+		/* ———————————————————————————————————————————————————— */
 
 		[[fallthrough]]; case RXT_RANGE: case RXT_INVALID: default:
 			error_impossible_case();
+			return false; // unreachable
 	}
-
-	return false;
 }
 
+#pragma clang diagnostic pop
+
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
+
+// spell:ignoreRegExp /(?<=\n#.+"-)W/g

@@ -1,5 +1,6 @@
 /// @file parsing/parse.c
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -22,16 +23,12 @@ rxobj_t rx_compile(const char *const string, const uint64_t flags) {
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-/// Allocate `size` bytes of memory, and copy that many bytes from `src`.
-#define memdup(src, size) memcpy(malloc((size)), (src), (size))
-
 static inline rxobj_t rx_init(const char *const string, const uint64_t flags) {
 	const rxobj_t rx_obj = calloc(1, sizeof(struct rx__regex));
-	const size_t str_len = string == NULL ? 0 : strlen(string) + 1;
 
 	*rx_obj = (struct rx__regex){
 		.tokens = (RxTokens){ .arr = NULL, .len = 0 },
-		.string = memdup(string, str_len),
+		.string = strdup(string),
 		.flags  = flags,
 		.group_count = 0,
 	};

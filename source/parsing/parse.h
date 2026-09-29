@@ -28,18 +28,20 @@
 
 typedef enum rx__tokentype {
 	RXT_INVALID	,
-	RXT_LITERAL	, // 'a' 'b' 'c'
-	RXT_CLASS	, // '.' '\w' '\d' '\N', etc.
 
-	RXT_OR		, // '|' /// Can only be the base token, or the exclusive subtoken of `RXT_GROUP`.
-	RXT_ANCHOR	, // '^' '$'
-	RXT_BACKREF	, // '\1' '\k<name>', etc.
+	RXT_LITERAL	, // char			:  'a' 'b' 'c'
+	RXT_CLASS	, // char			:  '.' '\w' '\d' '\N', etc.
+	RXT_ANCHOR	, // char			:  '^' '$' '\b', etc.
 
-	RXT_GROUP	, // '('
-	RXT_SET		, // '['
-	RXT_RANGE	, // ['a-z'] /// Can only be a subtoken of `RXT_SET`.
+	RXT_BACKREF	, // groupid_t	  *	:  '\1' '\k<name>', etc.
 
-	RXT_QUANT	, // '+' '*' '?' '{1,2}'
+	RXT_OR		, // RxOrToken	  *	:  '|' /// Can only be the base token, or the exclusive subtoken of `RXT_GROUP`.
+	RXT_GROUP	, // RxGroupToken *	:  '('
+	RXT_QUANT	, // RxQuantToken *	:  '+' '*' '?' '{1,2}'
+
+	RXT_SET		, // RxSetToken	  *	:  '['
+	RXT_RANGE	, // RxRangeToken *	:  ['a-z'] /// Can only be a subtoken of `RXT_SET`.
+
 } RxTokenType;
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */

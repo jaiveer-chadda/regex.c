@@ -16,7 +16,7 @@
 
 #ifdef DEBUG_MODE
 #	define DEBUG_INPUT(i) do {										\
-		printf("\n[%zu] = '\33[4m", i);								\
+		printf("[%zu] = '\33[4m", i);								\
 		for (const char *chr = INPUTS[i]; *chr != '\0'; chr++) {	\
 			printf("%s", (*chr == ' ' ? "·" : (char[2]){ *chr }));	\
 		}															\
@@ -29,21 +29,28 @@
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 // const char REGEX[] = "^[-\\w]+|[0-9]*@\\w+?.(?<group>Mail|male|meal\\))\\b(\\.(\\x40e)?[a-z]{2,}){1,3}$";
-const char REGEX[] = "abc";
+const char REGEX[] = "ab{2,4}c";
 
 const char INPUTS[][32] = {
-	"abc",
-	" abc ",
-	"a bc",
-	"ab c",
-	"abc abc",
-	"thisabcisabcatestabcstring",
-	"cba",
+	"abbc",
+	// "abc",
+	// "abbbc",
+	// // "abbc",
+	// " ac",
+	// "abbbbbc",
+	// // " abc ",
+	// // "a bc",
+	// // "ab c",
+	// // "abc abc",
+	// // "thisabcisabcatestabcstring",
+	// // "cba",
 };
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 int main(const int argc, const char *const argv[]) {
+	puts(REGEX);
+
 	const rxobj_t regex = rx_compile(REGEX, RX_FLAGS[RXF_GLOBAL].bf | RX_FLAGS[RXF_MULTILINE].bf);
 
 	fputs("regex = ", stdout); print_regex(regex); putchar('\n');
@@ -62,4 +69,4 @@ int main(const int argc, const char *const argv[]) {
 
 #pragma clang diagnostic pop
 
-// spell:ignoreRegexp /(?<=\n#.+"-)W|\brx/g
+// spell:ignoreRegexp /(?<=\n#.+"-)W|\brx|(?<=\n\t*(// )*")[^"]+?(?=",?\n)/g
