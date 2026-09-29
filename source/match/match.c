@@ -67,7 +67,6 @@ static inline ssize_t rx_match_from_char(const RxTokens tokens, const char *cons
 	}
 
 	if (ti != tokens.len) return -1;
-
 	return (ssize_t)(chr - from_chr) + 1;
 }
 

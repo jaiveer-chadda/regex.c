@@ -14,9 +14,14 @@ function -- () {
   # ————————————————————————————————————————————————————————————————————————— #
 
   local -ri 10 optimisation=0
-  local -ra CFLAGS=( g O$optimisation ) DEFINES=( )
+  local -ra CFLAGS=( g O$optimisation )
 
   # ———————————————————————————————————————————————————— #
+
+  local -a DEFINES=( )
+  if [[ "$1" == '--debug' ]] { DEFINES+=( DEBUG_MODE ); shift; }
+
+  # ————————————————————————————————————————————————————————————————————————— #
 
   # all `-W...` warnings to enable
   local -a WARNINGS=( all extra pedantic vla )
