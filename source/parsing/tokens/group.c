@@ -108,7 +108,7 @@ token_t rx_tokenise_group(const char **const chr, const rxobj_t rx_obj) {
 			group->id = (groupid_t){
 				.type = GIDT_INT,
 				// since the count is initialised to 0, it needs to be incremented first before being assigned
-				.id = ++(rx_obj->capture_count)
+				.id = ++(rx_obj->group_count)
 			};
 
 			break;
@@ -127,7 +127,7 @@ token_t rx_tokenise_group(const char **const chr, const rxobj_t rx_obj) {
 			if (type == RXG_NON_CAPT) {
 				group->id = (groupid_t){
 					.type = GIDT_INT,
-					.id = ++(rx_obj->capture_count)
+					.id = ++(rx_obj->group_count)
 				};
 			}
 
@@ -142,7 +142,7 @@ token_t rx_tokenise_group(const char **const chr, const rxobj_t rx_obj) {
 	group->type = type;
 
 	// set the group's capturing index, which is agnostic to whether it's a named or numbered group
-	if (type != RXG_NON_CAPT) group->id.idx = rx_obj->group_count++;
+	if (type != RXG_NON_CAPT) group->id.idx = rx_obj->capture_count++;
 
 	RETURN_TOKEN(RXT_GROUP, group);
 }

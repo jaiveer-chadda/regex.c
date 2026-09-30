@@ -51,9 +51,9 @@ typedef int64_t any_t;
 typedef enum { GIDT_INVALID, GIDT_INT, GIDT_STR } RxGroupIDType;
 
 typedef struct {
-	any_t id;
-	RxGroupIDType type;
-	uint16_t idx; /** Capturing index - agnostic to whether it's a named or numbered group. */
+	any_t id; /** A string containing the group name, or the number of the group. Maps to `rxobj_t::group_count`. */
+	RxGroupIDType type; /** Whether `self::id` holds an integer (numbered group) or a string (named group). */
+	uint16_t idx; /** Capturing index - agnostic to `self::type`. Maps to `rxobj_t::capture_count`. */
 } groupid_t;
 
 /* ———————————————————————————————————————————— */
@@ -95,8 +95,8 @@ struct rx__regex {
 	const char *string;
 
 	RxTokens tokens;
-	uint16_t group_count; /** The running count of strictly numbered groups. */
-	uint16_t capture_count; /** The count of total capturing groups (named or numbered). */
+	uint16_t group_count; /** The running count of strictly numbered groups. Maps to `groupid_t::type`. */
+	uint16_t capture_count; /** The count of total capturing groups (named or numbered). Maps to `groupid_t::idx`. */
 };
 
 typedef struct rx__regex *rxobj_t;
