@@ -51,7 +51,7 @@ token_t rx_tokenise_group(const char **const chr, const rxobj_t rx_obj) {
 	/* ———————————————————————————————————————————————————— */
 
 	switch (type) {
-		case RXG_NAMED:
+		case RXG_NAMED: {
 			// depending on which character was used to begin the named group,
 			//	work out which one we're expecting to end it
 			char end_char;
@@ -73,10 +73,11 @@ token_t rx_tokenise_group(const char **const chr, const rxobj_t rx_obj) {
 			};
 
 			break;
+		}
 
 		/* ———————————————————————————————————————————————————— */
 
-		case RXG_FLAGS:
+		case RXG_FLAGS: {
 			uint64_t flags = 0;
 
 			// iterate through the flags
@@ -106,32 +107,42 @@ token_t rx_tokenise_group(const char **const chr, const rxobj_t rx_obj) {
 			group->info = (any_t)flags;
 			group->id = (groupid_t){
 				.type = GIDT_INT,
-				// since the count starts at 0, it needs to be incremented first before being assigned
-				.id = ++(rx_obj->group_count)
+				// since the count is initialised to 0, it needs to be incremented first before being assigned
+				.id = ++(rx_obj->capture_count)
 			};
 
 			break;
+		}
 
-		default: break;
+		/* ———————————————————————————————————————————————————— */
+
+		// if `group` isn't a named group or flag group
+		default: {
+			// this is a small adjustment for the non-named/flag groups,
+			//	so that the pointer always starts at the character _before_ the group's contents
+			(*chr)--;
+
+			group = calloc(1, sizeof(RxGroupToken));
+
+			if (type == RXG_NON_CAPT) {
+				group->id = (groupid_t){
+					.type = GIDT_INT,
+					.id = ++(rx_obj->capture_count)
+				};
+			}
+
+			break;
+		}
 	}
 
 	/* ———————————————————————————————————————————————————— */
 
-	if (group == NULL) {
-		// this is a small adjustment for the non-named/flag groups,
-		//	so that the pointer always starts at the character _before_ the group's contents
-		(*chr)--;
-
-		group = calloc(1, sizeof(RxGroupToken));
-		group->id = (groupid_t){
-			.type = GIDT_INT,
-			.id = ++(rx_obj->group_count)
-		};
-	}
-
 	// tokenise the contents of the group and set the group's type
 	group->tokens = rx_tokenise_sections(chr, rx_obj, ')');
 	group->type = type;
+
+	// set the group's capturing index, which is agnostic to whether it's a named or numbered group
+	if (type != RXG_NON_CAPT) group->id.idx = rx_obj->group_count++;
 
 	RETURN_TOKEN(RXT_GROUP, group);
 }
@@ -171,7 +182,7 @@ static inline RxGroup rx_get_group_type(const char **const chr) {
 			// iterate through the identifier to find its length
 			while (*(++(*chr)) != '\0'
 				&& **chr != ':'
-				&& **chr != ')' // maybe remove later when implementing the `(?X)` groups?
+				&& **chr != ')' /** @todo maybe remove later when implementing the `(?X)` groups? */
 			);
 
 			if (**chr != ':') error_invalid_group_type();

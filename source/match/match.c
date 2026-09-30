@@ -39,8 +39,14 @@ static inline ssize_t rx_match_tokens(const RxTokens tokens, const char *const c
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 matches_t rx_match(const rxobj_t rx_obj, const char *const string) {
-	matches_t matches = { .arr = NULL, .len = 0, .string = string };
 	size_t alloc_count = 0;
+	matches_t matches = {
+		// allocate memory for the captured string of each of the capturing groups
+		.captures = calloc(rx_obj->capture_count, sizeof(char*)),
+		.string = string,
+		.arr = NULL,
+		.len = 0,
+	};
 
 	// iterate through the test string, trying to find a match starting from each character
 	for (const char *chr = string; *chr != '\0'; chr++) {

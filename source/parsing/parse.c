@@ -28,9 +28,9 @@ static inline rxobj_t rx_init(const char *const string, const uint64_t flags) {
 
 	*rx_obj = (struct rx__regex){
 		.tokens = (RxTokens){ .arr = NULL, .len = 0 },
+		.group_count = 0, .capture_count = 0,
 		.string = strdup(string),
 		.flags  = flags,
-		.group_count = 0,
 	};
 
 	return rx_obj;
