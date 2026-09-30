@@ -38,9 +38,8 @@ typedef struct {
 	void d__line(const uint8_t len);
 
 	void d__match(
-		const char *const start_, const token_t *token, const char *const chr, const ssize_t match_len, const int depth
-	);
-	void d__match_len(const ssize_t match_len);
+		const char *const str, const token_t *token, const char *const chr, const ssize_t len, const int depth);
+	void d__match_len(const char *const chr, const ssize_t match_len);
 
 	/* ————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
@@ -56,7 +55,7 @@ typedef struct {
 
 #	define dmatch(token, chr, mlen, depth)	d__match(NULL, &(token), (chr), (mlen), (depth))
 #	define dmatch_init(start)				d__match((start), NULL, NULL, -1, -1)
-#	define dmatch_len(len)					d__match_len(len)
+#	define dmatch_len(chr, len)				d__match_len(chr, len)
 
 	/* ————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
@@ -88,7 +87,7 @@ typedef struct {
 #	define	 dline(...)
 #	define dmatch(token, chr, mlen, depth)
 #	define dmatch_init(start)
-#	define dmatch_len(len)
+#	define dmatch_len(chr, len)
 #endif
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */

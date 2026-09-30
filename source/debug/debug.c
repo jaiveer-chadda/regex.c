@@ -23,36 +23,28 @@ static const LogLevel LOG_LEVELS[] = { LOG_LEVEL_TABLE };
 #define TAB "  "
 #define MATCHED(len) ((len) != -1L)
 
-void d__match(
-	const char *const start_, const token_t *token, const char *const chr, const ssize_t match_len, const int depth
-) {
+void d__match(const char *const str, const token_t *token, const char *const chr, const ssize_t len, const int depth) {
 	static const char *STRING_START = NULL;
 	static ssize_t idx = -1;
 
-	if (start_ != NULL) { STRING_START = start_; return; }
+	if (str != NULL) { STRING_START = str; return; }
 
 	const bool same = (idx == chr - STRING_START);
 	idx = chr - STRING_START;
 
 	/* ———————————————————————————————————————————————————————————————————— */
 
-	eprintf(TAB D("[") "%ld" D("]<") "%d" D(">"), chr - STRING_START, depth);
-
-	#define eprint_indent() for (int i = 0; i < 8 - depth; i++) eputs(TAB)
+	eprintf(TAB D("[") "%ld" D("] <") "%d" D(">"), chr - STRING_START, depth);
 
 	/* ———————————————————————————————————————————————————————————————————— */
 
-	const char *const colour = MATCHED(match_len) ? "\33[32m" : "\33[31m";
+	eprintf("%s  ", MATCHED(len) ? "\33[32m" : "\33[31m");
+	if (same) eputs("   "); else eprintf(D("'") "%c" D("'"), *chr);
 
-	eprintf("%s  ", colour);
-	if (same) eputs("   "); else eprintf("'%c'", *chr);
-	eprint_indent();
+	for (int i = 0; i < 8 - depth; i++) eputs(TAB);
 
-	eputs("\33[2m———\33[m ");
-	// eprintf("{ ");
+	eputs("\33[2m————\33[m ");
 	eprint_token(*token);
-	// eprintf("%s", colour);
-	// eprintf(" }\33[m");
 
 	/* ———————————————————————————————————————————————————————————————————— */
 
@@ -61,10 +53,18 @@ void d__match(
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-void d__match_len(const ssize_t match_len) {
-	if (MATCHED(match_len)) {
-		eprintf(TAB "len = [%zd]\n", match_len);
-	}
+void d__match_len(const char *const chr, const ssize_t match_len) {
+	if (!MATCHED(match_len)) return;
+
+	eprintf(
+		TAB TAB
+		"\33[32mmatched\33[92m"
+		SP D("'") "%.*s"	D("'") "\33[m"
+		SP D("(") "len %zd"	D(")")
+		"\n",
+
+		(int)match_len, chr, match_len
+	);
 }
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
@@ -139,4 +139,4 @@ void d__stacktrace(void) {
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-// spell:ignore LNNO
+// spell:ignoreRegexp /(\\(?:[␛e]|0?33|[xUu]1[Bb])|␛)\[[0-9;]*?m\B/g
