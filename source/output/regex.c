@@ -31,7 +31,7 @@ static inline void rx__print_tokens(const RxTokens tokens, FILE *const file);
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 void print_regex(const rxobj_t rx_obj) {
-	rx_print_tokens(rx_obj->tokens);
+	rx__print_tokens(rx_obj->tokens, stdout);
 	putchar('\n');
 }
 
@@ -150,7 +150,7 @@ void rx__print_token(const token_t token, const bool do_repr, FILE *const file) 
 
 		CASE(RXT_QUANT); {
 			const RxQuantToken *const quant = (RxQuantToken*)token.value;
-			eprint_token(quant->repeat);
+			rx__print_token(quant->repeat, false, file);
 
 			putstr("\33[95m");
 

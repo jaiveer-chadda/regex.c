@@ -16,11 +16,11 @@
 
 #ifdef DEBUG_MODE
 #	define DEBUG_INPUT(i) do {										\
-		printf("[%zu] = '\33[4m", i);								\
+		printf("\33[40m[input %zu] = '\33[4m", i);					\
 		for (const char *chr = INPUTS[i]; *chr != '\0'; chr++) {	\
 			printf("%s", (*chr == ' ' ? "·" : (char[2]){ *chr }));	\
 		}															\
-		puts("\33[m'");												\
+		puts("\33[24m'\33[m");										\
 	} while (0)
 #else
 #	define DEBUG_INPUT(i) (void)i
@@ -35,10 +35,10 @@ const char REGEX[] = "([a-z]+)(\\d)?";
 const char INPUTS[][64] = {
 	// "0 ",
 	// "12345",
-	"xxabc",
+	// "xxabc",
 	"  12a45",
-	"a5",
-	"12abc34def5",
+	// "a5",
+	// "12abc34def5",
 	// "12abc3p0def5",
 	// "xyza1b2c3",
 	// "12 45",

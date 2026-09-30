@@ -4,6 +4,7 @@
 #define DEBUG_H_
 
 #include <inttypes.h>
+#include "parsing/parse.h"
 
 #define LOG_LEVEL_TABLE \
 	X(TRACE		, 90) \
@@ -36,6 +37,11 @@ typedef struct {
 	void d__stacktrace(void);
 	void d__line(const uint8_t len);
 
+	void d__match(
+		const char *const start_, const token_t *token, const char *const chr, const ssize_t match_len, const int depth
+	);
+	void d__match_len(const ssize_t match_len);
+
 	/* ————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 #	define	  dlog(log_level, ...) d__debug(LOG_##log_level, __LINE__, __TIME__, __FILE__, __func__, __VA_ARGS__)
@@ -47,6 +53,10 @@ typedef struct {
 #	define	 error(...) dlog(ERROR	, __VA_ARGS__)
 #	define	 fatal(...) dlog(FATAL	, __VA_ARGS__)
 #	define stacktrace()			 d__stacktrace()
+
+#	define dmatch(token, chr, mlen, depth)	d__match(NULL, &(token), (chr), (mlen), (depth))
+#	define dmatch_init(start)				d__match((start), NULL, NULL, -1, -1)
+#	define dmatch_len(len)					d__match_len(len)
 
 	/* ————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
@@ -76,6 +86,9 @@ typedef struct {
 #	define	 error(...)
 #	define	 fatal(...)
 #	define	 dline(...)
+#	define dmatch(token, chr, mlen, depth)
+#	define dmatch_init(start)
+#	define dmatch_len(len)
 #endif
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */

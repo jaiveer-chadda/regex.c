@@ -24,11 +24,11 @@ void rx_print_matches(const matches_t matches) {
 		rx_print_match(matches.arr[i], matches.string);
 	}
 
-	for (size_t i = 0; i < matches.num_cap; i++) {
-		const char *const capture = matches.captures[i];
-		if (capture == NULL) continue;
-		printf("group [%zu] = '%s'\n", i, capture);
-	}
+	// for (size_t i = 0; i < matches.num_cap; i++) {
+	// 	const char *const capture = matches.captures[i];
+	// 	if (capture == NULL) continue;
+	// 	printf("group [%zu] = '%s'\n", i, capture);
+	// }
 
 	putchar('\n');
 }

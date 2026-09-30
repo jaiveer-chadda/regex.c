@@ -41,6 +41,10 @@
 
 #define	 PERR(...) do { fprintf(stderr, __VA_ARGS__); fflush(stderr); } while (0)
 #define	PSERR(str) do { fputs(str, stderr);			  fflush(stderr); } while (0)
+#define eputc(chr)	putc(chr, stderr)
+
+#define eprintf	PERR
+#define eputs	PSERR
 
 #define STACK_MAX 128
 
