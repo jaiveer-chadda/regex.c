@@ -76,10 +76,6 @@ static inline ssize_t rx_match_tokens(const RxTokens tokens, const char *chr) {
 	/* ———————————————————————————————————————————————————— */
 
 	while (*chr != '\0') {
-		if (tokens.arr == NULL) {
-
-		}
-
 		const token_t token = tokens.arr[ti];
 
 		// check if this character can be matched by this token
@@ -107,14 +103,13 @@ static inline ssize_t rx_match_tokens(const RxTokens tokens, const char *chr) {
 	return (ssize_t)(chr - start);
 }
 
-#undef token
-
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-variable"
 
 #define RETURN_BOOL(test) return ((test) ? 1 : -1)
+#define IS_EMPTY(tks) ((tks).len == 1 && (tks).arr[0].type == RXT_EMPTY)
 
 static inline ssize_t rx_match_token(const token_t token, const char *chr) {
 	if (*chr == '\0') return -1;
@@ -169,13 +164,12 @@ static inline ssize_t rx_match_token(const token_t token, const char *chr) {
 		/* ———————————————————————————————————————————————————— */
 
 		case RXT_OR: {
-			const RxOrToken *const or_sections = (RxOrToken*)token.value;
+			const RxOrToken *const or_sects = (RxOrToken*)token.value;
 
-			for (size_t i = 0; i < or_sections->count; i++) {
-				const RxTokens section = or_sections->sections[i];
-				if (section.len == 1 && section.arr[0].type == RXT_EMPTY) return true;
+			for (size_t i = 0; i < or_sects->count; i++) {
+				if (IS_EMPTY(or_sects->sections[i])) return true;
 
-				const ssize_t match_size = rx_match_tokens(section, chr);
+				const ssize_t match_size = rx_match_tokens(or_sects->sections[i], chr);
 				if (match_size != -1) return match_size;
 			}
 
@@ -186,7 +180,9 @@ static inline ssize_t rx_match_token(const token_t token, const char *chr) {
 
 		case RXT_GROUP: {
 			const RxGroupToken *const group = (RxGroupToken*)token.value;
-			return -1;
+
+			if (IS_EMPTY(group->tokens)) return 0;
+			return rx_match_tokens(group->tokens, chr);
 		}
 
 		/* ———————————————————————————————————————————————————— */
@@ -217,17 +213,17 @@ static inline ssize_t rx_match_token(const token_t token, const char *chr) {
 		/* ———————————————————————————————————————————————————— */
 
 		case RXT_EMPTY: {
-			// this shouldn't ever be accessed directly
+			// this shouldn't only ever be accessed directly when the entire regex is empty
 			//	each token should have its own way of dealing with `RXT_EMPTY` cases
-			assert("RXT_EMPTY accessed via `rx_match_token` switch/case statement" && false);
 			return true;
 		}
 
 		/* ———————————————————————————————————————————————————— */
 
-		[[fallthrough]]; case RXT_INVALID: default:
+		[[fallthrough]]; case RXT_INVALID: default: {
 			error_impossible_case();
 			return -1; // unreachable
+		}
 	}
 
 	/* ———————————————————————————————————————————————————— */

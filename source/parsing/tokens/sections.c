@@ -104,7 +104,11 @@ RxTokens rx_tokenise_sections(const char **const chr, const rxobj_t rx_obj, cons
 
 	// make sure that we actually parsed the whole thing
 	if (**chr != end_chr) {
-		if (or_token->sections != NULL) free(or_token->sections);
+		if (or_token != NULL) {
+			free(or_token);
+			if (or_token->sections != NULL) free(or_token->sections);
+		}
+
 		if (tokens.arr != NULL) free(tokens.arr);
 
 		error_unterminated_group();
