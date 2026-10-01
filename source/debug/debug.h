@@ -3,9 +3,6 @@
 #ifndef DEBUG_H_
 #define DEBUG_H_
 
-#include <inttypes.h>
-#include "parsing/parse.h"
-
 #define LOG_LEVEL_TABLE \
 	X(TRACE		, 90) \
 	X(DEBUG		, 34) \
@@ -27,6 +24,9 @@ typedef struct {
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 #ifdef DEBUG_MODE
+
+#	include <inttypes.h>
+#	include "parsing/parse.h"
 
 	void d__debug(
 		const LogLevelIdx level_idx, const int lineno,
@@ -74,7 +74,7 @@ typedef struct {
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-#else
+#else /* !DEBUG_MODE */
 #	define stacktrace()
 #	define	  dlog(...)
 #	define	 trace(...)
@@ -88,7 +88,7 @@ typedef struct {
 #	define dmatch(token, chr, mlen, depth)
 #	define dmatch_init(start)
 #	define dmatch_len(chr, len)
-#endif
+#endif /* DEBUG_MODE */
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
