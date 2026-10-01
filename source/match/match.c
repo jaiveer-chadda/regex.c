@@ -21,8 +21,7 @@
 	matches_t *const matches,	\
 	const int depth
 
-static inline ssize_t rx_match_token (const token_t	 token,TOKEN_MATCH_ARGS);
-static inline ssize_t rx_match_tokens(const token_t	*token_arr, const size_t count,	TOKEN_MATCH_ARGS);
+static inline ssize_t rx_match_token(const token_t *const token, const ssize_t count, TOKEN_MATCH_ARGS);
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
@@ -49,7 +48,7 @@ matches_t rx_match(const rxobj_t rx_obj, const char *const string) {
 
 	// iterate through the test string, trying to find a match starting from each character
 	for (const char *chr = string; *chr != '\0'; chr++) {
-		const ssize_t match_len = rx_match_tokens(SPREAD_TOKS(rx_obj->tokens), chr, &matches, 0);
+		const ssize_t match_len = rx_match_token(SPREAD_TOKS(rx_obj->tokens), chr, &matches, 0);
 		dmatch_len(chr, match_len);
 
 		// if we didn't find a match, then move on, and start trying to find a match starting from the next character
@@ -68,7 +67,7 @@ matches_t rx_match(const rxobj_t rx_obj, const char *const string) {
 		// the match should never have gone past the end of the string
 		assert(match_len <= (ssize_t)strnlen(chr, match_len));
 
-		// increment the char pointer by the match len, so we don't get overlapping matches 
+		// increment the char pointer by the match len, so we don't get overlapping matches
 		chr += (intptr_t)match_len - 1;
 
 		// make sure that the char pointer is always moved forward by at least one every time
@@ -81,35 +80,6 @@ matches_t rx_match(const rxobj_t rx_obj, const char *const string) {
 }
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
-/* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
-
-static inline ssize_t rx_match_tokens(const token_t *token_arr, const size_t count, TOKEN_MATCH_ARGS) {
-	const char *const start = chr;
-
-	/* ———————————————————————————————————————————————————— */
-
-	// iterate through all the tokens - only exit if we run out of tokens, or if one of the tokens doesn't match
-	for (size_t ti = 0; ti < count; ti++) {
-		const token_t token = token_arr[ti];
-
-		// check if this character can be matched by this token
-		const ssize_t match_len = rx_match_token(token, chr, matches, depth + 1);
-
-		// if we couldn't find a match, then move on, and start testing from the next character
-		if (!MATCHED(match_len)) return -1;
-
-		/* ———————————————————————————————————————————————————— */
-
-		// if the match was successful, increment the character pointer by the number of chars matched
-		chr += (intptr_t)match_len;
-	}
-
-	/* ———————————————————————————————————————————————————— */
-
-	// once all tokens have been parsed, calculate the match's length, and return
-	return (ssize_t)(chr - start);
-}
-
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 #ifdef DEBUG_MODE
@@ -129,131 +99,151 @@ static inline ssize_t rx_match_tokens(const token_t *token_arr, const size_t cou
 
 /* ————————————————————————————————————————————————————————————————————— */
 
-static inline ssize_t rx_match_token(const token_t token, TOKEN_MATCH_ARGS) {
+static inline ssize_t rx_match_token(const token_t *const token, const ssize_t count, TOKEN_MATCH_ARGS) {
 	ssize_t match_len = -1;
+
+	if (count ==  0) RETURN_VALUE( 0);
+	if (count == -1) RETURN_VALUE(-1);
 
 	/* ———————————————————————————————————————————————————— */
 
-	switch (token.type) {
+	switch (token->type) {
 
-		case RXT_LITERAL: RETURN_BOOL(*chr == (char)token.value);
-		case RXT_CLASS	: RETURN_BOOL(rx_match_class(token.value, *chr));
+		case RXT_LITERAL: {
+			// if it doesn't match, then there's nothing more to do
+			//	therefore we've failed this branch, and we now have to backtrack (de-recurse)
+			if (*chr != (char)token->value) RETURN_FAILURE();
+			match_len = 1; // we matched, and by definition, the length of a single char is 1
+
+			// now that we've matched this token, check that all the tokens after it also matches
+			const ssize_t tail_len = rx_match_token(token + 1, count - 1, chr + 1, matches, depth + 1);
+
+			// if it does, then return (our length + its length)
+			if (MATCHED(tail_len)) RETURN_SUCCESS(match_len + tail_len);
+			else RETURN_FAILURE(); // and if not, then just return failure as usual
+		}
+
+		/* ———————————————————————————————————————————————————— */
+
+		case RXT_CLASS: {
+			// RETURN_BOOL(rx_match_class(token->value, *chr));
+		}
 
 		/* ———————————————————————————————————————————————————— */
 
 		case RXT_ANCHOR: {
-			const char anchor = (char)token.value;
+			const char anchor = (char)token->value;
 			error_not_implemented(); (void)anchor;
 		}
 
 		/* ———————————————————————————————————————————————————— */
 
 		case RXT_BACKREF: {
-			const groupid_t *const groupref = (groupid_t*)token.value;
+			const groupid_t *const groupref = (groupid_t*)token->value;
 			error_not_implemented(); (void)groupref;
 		}
 
 		/* ———————————————————————————————————————————————————— */
 
 		case RXT_QUANT: {
-			const RxQuantToken *const quant = (RxQuantToken*)token.value;
-			const char *const start = chr, *pchar = chr;
-
-			// try and match the token the maximum number of times specified by the quantifier
-			size_t count = 0;
-			for (; count < quant->rhs; count++) {
-				match_len = rx_match_token(quant->repeat, pchar, matches, depth + 1);
-
-				// if at any point it fails to match, break
-				if (!MATCHED(match_len)) break;
-
-				// check that moving the pointer forward won't move it past the end of the string
-				if (match_len > (ssize_t)strnlen(pchar, match_len)) RETURN_FAILURE();
-
-				pchar += match_len; // move the char pointer forward by the length of the match
-			}
-
-			// check if we're still within the bounds of the minimum repetition count (the lhs)
-			//	if we are, then we haven't done enough iterations - return failure
-			if (count < quant->lhs) RETURN_FAILURE();
-
-			// if, however, we're trying to match something _after_ we've passed the minimum rep count
-			//	then there's nothing to be done - just return the match's length
-			RETURN_SUCCESS(pchar - start); // return the number of chars that were (successfully) parsed
+			// const RxQuantToken *const quant = (RxQuantToken*)token->value;
+			// const char *const start = chr, *pchar = chr;
+			//
+			// // try and match the token the maximum number of times specified by the quantifier
+			// size_t count = 0;
+			// for (; count < quant->rhs; count++) {
+			// 	match_len = rx_match_token(quant->repeat, pchar, matches, depth + 1);
+			//
+			// 	// if at any point it fails to match, break
+			// 	if (!MATCHED(match_len)) break;
+			//
+			// 	// check that moving the pointer forward won't move it past the end of the string
+			// 	if (match_len > (ssize_t)strnlen(pchar, match_len)) RETURN_FAILURE();
+			//
+			// 	pchar += match_len; // move the char pointer forward by the length of the match
+			// }
+			//
+			// // check if we're still within the bounds of the minimum repetition count (the lhs)
+			// //	if we are, then we haven't done enough iterations - return failure
+			// if (count < quant->lhs) RETURN_FAILURE();
+			//
+			// // if, however, we're trying to match something _after_ we've passed the minimum rep count
+			// //	then there's nothing to be done - just return the match's length
+			// RETURN_SUCCESS(pchar - start); // return the number of chars that were (successfully) parsed
 		}
 
 		/* ———————————————————————————————————————————————————— */
 
 		case RXT_OR: {
-			const RxOrToken *const or_sects = (RxOrToken*)token.value;
+			// const RxOrToken *const or_sects = (RxOrToken*)token->value;
 
-			// iterate through each of the sections in the 'or' object
-			for (size_t i = 0; i < or_sects->count; i++) {
-				const RxTokens section = or_sects->sections[i];
+ 			// // iterate through each of the sections in the 'or' object
+			// for (size_t i = 0; i < or_sects->count; i++) {
+			// 	const RxTokens section = or_sects->sections[i];
+			//
+			// 	// for empty 'or' sects `(|...)` short-circuit the matching func, and return a match w/ a length of 1
+			// 	if (IS_EMPTY(section)) RETURN_SUCCESS(true);
+			//
+			// 	match_len = rx_match_tokens(SPREAD_TOKS(section), chr, matches, depth + 1);
+			// 	if (MATCHED(match_len)) RETURN_SUCCESS();
+			// }
 
-				// for empty 'or' sects `(|...)` short-circuit the matching func, and return a match w/ a length of 1
-				if (IS_EMPTY(section)) RETURN_SUCCESS(true);
-
-				match_len = rx_match_tokens(SPREAD_TOKS(section), chr, matches, depth + 1);
-				if (MATCHED(match_len)) RETURN_SUCCESS();
-			}
-
-			RETURN_FAILURE(); // none of the 'or' sections matched
+ 			// RETURN_FAILURE(); // none of the 'or' sections matched
 		}
 
 		/* ———————————————————————————————————————————————————— */
 
 		case RXT_GROUP: {
-			const RxGroupToken *const group = (RxGroupToken*)token.value;
+			// const RxGroupToken *const group = (RxGroupToken*)token->value;
 
-			match_len = (
-				// if the group is empty, short-circuit the `rx_match_tokens` function, setting the length to 0
-				IS_EMPTY(group->tokens) ? 0
-				// otherwise, find the match & its length as normal
-				: rx_match_tokens(SPREAD_TOKS(group->tokens), chr, matches, depth + 1)
-			);
+			// match_len = (
+			// 	// if the group is empty, short-circuit the `rx_match_tokens` function, setting the length to 0
+			// 	IS_EMPTY(group->tokens) ? 0
+			// 	// otherwise, find the match & its length as normal
+			// 	: rx_match_tokens(SPREAD_TOKS(group->tokens), chr, matches, depth + 1)
+			// );
 
-			if (MATCHED(match_len)) { // if we didn't find a match, don't capture anything
-				// copy the match into the `captures` array, assigning it to the index of this group
-				//	also, allocate one more byte than the match's length, so `calloc` can include a nullbyte at the end
-				matches->captures[group->id.idx] = memcpy(calloc(1, match_len + 1), chr, match_len);
-			}
+			// if (MATCHED(match_len)) { // if we didn't find a match, don't capture anything
+			// 	// copy the match into the `captures` array, assigning it to the index of this group
+			// 	//	also, allocate one more byte than the match's length, so `calloc` can include a nullbyte at the end
+			// 	matches->captures[group->id.idx] = memcpy(calloc(1, match_len + 1), chr, match_len);
+			// }
 
-			RETURN; // match_len is already set - return it
+			// RETURN; // match_len is already set - return it
 		}
 
 		/* ———————————————————————————————————————————————————— */
 
 		case RXT_SET: {
-			const RxSetToken *const set = (RxSetToken*)token.value;
+			// const RxSetToken *const set = (RxSetToken*)token->value;
 
-			// iterate through all of the set's tokens, checking each one for a match
-			for (size_t i = 0; i < set->tokens.len; i++) {
-				if (MATCHED(rx_match_token(set->tokens.arr[i], chr, matches, depth + 1))) {
-					// if we find a match and we're in inverse mode, then return failure
-					// if we find a match and we're _not_ in inverse mode, return success
-					RETURN_VALUE(set->is_inverse ? -1 : 1);
-				}
-			}
+			// // iterate through all of the set's tokens, checking each one for a match
+			// for (size_t i = 0; i < set->tokens.len; i++) {
+			// 	if (MATCHED(rx_match_token(set->tokens.arr[i], chr, matches, depth + 1))) {
+			// 		// if we find a match and we're in inverse mode, then return failure
+			// 		// if we find a match and we're _not_ in inverse mode, return success
+			// 		RETURN_VALUE(set->is_inverse ? -1 : 1);
+			// 	}
+			// }
 
-			// if we couldn't find a match in inverse mode, it's a success, and in normal mode, a failure
-			RETURN_VALUE(set->is_inverse ? 1 : -1);
+			// // if we couldn't find a match in inverse mode, it's a success, and in normal mode, a failure
+			// RETURN_VALUE(set->is_inverse ? 1 : -1);
 		}
 
 		/* ———————————————————————————————————————————————————— */
 
 		case RXT_RANGE: {
-			const RxRangeToken *const range = (RxRangeToken*)token.value;
-			// simply check whether a character is between the two sides of the range
-			RETURN_BOOL((range->lhs <= *chr) && (*chr <= range->rhs));
+			// const RxRangeToken *const range = (RxRangeToken*)token->value;
+			// // simply check whether a character is between the two sides of the range
+			// RETURN_BOOL((range->lhs <= *chr) && (*chr <= range->rhs));
 		}
 
 		/* ———————————————————————————————————————————————————— */
 
 		case RXT_EMPTY: {
-			// this shouldn't only ever be accessed directly when the entire regex is empty
-			//	each token should have its own way of dealing with `RXT_EMPTY` cases
-			RETURN_SUCCESS(true);
+			// // this shouldn't only ever be accessed directly when the entire regex is empty
+			// //	each token should have its own way of dealing with `RXT_EMPTY` cases
+			// RETURN_SUCCESS(true);
 		}
 
 		/* ———————————————————————————————————————————————————— */
@@ -268,7 +258,7 @@ static inline ssize_t rx_match_token(const token_t token, TOKEN_MATCH_ARGS) {
 
 	#ifdef DEBUG_MODE
 		return_label: {
-			dmatch(token, chr, match_len, depth);
+			if (count >= 1) dmatch(token, chr, match_len, depth);
 			return match_len;
 		}
 	#else

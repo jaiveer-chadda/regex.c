@@ -39,7 +39,7 @@ void d__match(const char *const str, const token_t *token, const char *const chr
 		ANSI8(%d) D("<") "%d"  D(">") RESET,
 
 		GET_COL(chr - STRING_START)	, chr - STRING_START,
-		GET_COL(depth - 1)			, depth
+		GET_COL(depth)				, depth
 	);
 
 	/* ———————————————————————————————————————————————————————————————————— */

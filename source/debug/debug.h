@@ -53,7 +53,7 @@ typedef struct {
 #	define	 fatal(...) dlog(FATAL	, __VA_ARGS__)
 #	define stacktrace()			 d__stacktrace()
 
-#	define dmatch(token, chr, mlen, depth)	d__match(NULL, &(token), (chr), (mlen), (depth))
+#	define dmatch(token, chr, mlen, depth)	d__match(NULL, (token), (chr), (mlen), (depth))
 #	define dmatch_init(start)				d__match((start), NULL, NULL, -1, -1)
 #	define dmatch_len(chr, len)				d__match_len(chr, len)
 
