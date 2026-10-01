@@ -92,10 +92,25 @@ matches_t rx_match(const rxobj_t rx_obj, const char *const string) {
 #	define RETURN_FAILURE()	 return -1
 #endif
 
-#define RETURN_SUCCESS		RETURN_VALUE
-#define RETURN_BOOL(test)	RETURN_VALUE((test) ? 1 : -1)
+#define RETURN_SUCCESS RETURN_VALUE
 
 #define IS_EMPTY(tks) ((tks).len == 1 && (tks).arr[0].type == RXT_EMPTY)
+
+/* ———————————————————————————————————————————————————— */
+
+#define CHECK_SINGLE_CHAR(test_case) do {																\
+	/* if it doesn't match, then there's nothing more to do */											\
+	/*	therefore we've failed this branch, and we now have to backtrack (de-recurse) */				\
+	if (!(test_case)) RETURN_FAILURE();																	\
+	match_len = 1; /* we matched, and by definition, the length of a single char is 1 */				\
+	\
+	/* now that we've matched this token, check that all the tokens after it also matches */			\
+	const ssize_t tail_len = rx_match_token(token + 1, count - 1, chr + match_len, matches, depth + 1);	\
+	\
+	/* if it does, then return (our length + its length) */												\
+	if (MATCHED(tail_len)) RETURN_SUCCESS(match_len + tail_len);										\
+	else RETURN_FAILURE(); /* and if not, then just return failure as usual */							\
+} while (0)
 
 /* ————————————————————————————————————————————————————————————————————— */
 
@@ -109,31 +124,8 @@ static inline ssize_t rx_match_token(const token_t *const token, const ssize_t c
 
 	switch (token->type) {
 
-		case RXT_LITERAL: {
-			// if it doesn't match, then there's nothing more to do
-			//	therefore we've failed this branch, and we now have to backtrack (de-recurse)
-			if (*chr != (char)token->value) RETURN_FAILURE();
-			match_len = 1; // we matched, and by definition, the length of a single char is 1
-
-			// now that we've matched this token, check that all the tokens after it also matches
-			const ssize_t tail_len = rx_match_token(token + 1, count - 1, chr + 1, matches, depth + 1);
-
-			// if it does, then return (our length + its length)
-			if (MATCHED(tail_len)) RETURN_SUCCESS(match_len + tail_len);
-			else RETURN_FAILURE(); // and if not, then just return failure as usual
-		}
-
-		/* ———————————————————————————————————————————————————— */
-
-		case RXT_CLASS: {
-			if (!rx_match_class(token->value, *chr)) RETURN_FAILURE();
-			match_len = 1;
-
-			const ssize_t tail_len = rx_match_token(token + 1, count - 1, chr + 1, matches, depth + 1);
-
-			if (MATCHED(tail_len)) RETURN_SUCCESS(match_len + tail_len);
-			else RETURN_FAILURE();
-		}
+		case RXT_LITERAL: CHECK_SINGLE_CHAR(*chr == (char)token->value);
+		case RXT_CLASS	: CHECK_SINGLE_CHAR(rx_match_class(token->value, *chr));
 
 		/* ———————————————————————————————————————————————————— */
 
@@ -230,7 +222,7 @@ static inline ssize_t rx_match_token(const token_t *const token, const ssize_t c
 
 			// iterate through all of the set's tokens, checking each one for a match
 			for (size_t i = 0; i < set->tokens.len; i++) {
-				const ssize_t tail_len = rx_match_token(token + 1, count - 1, chr + 1, matches, depth + 1);
+				const ssize_t tail_len = rx_match_token(token + 1, count - 1, chr + match_len, matches, depth + 1);
 
 				if (!MATCHED(tail_len)) continue;
 				match_len = 1;
@@ -241,14 +233,8 @@ static inline ssize_t rx_match_token(const token_t *const token, const ssize_t c
 				else RETURN_VALUE(match_len + tail_len);
 			}
 
-			// if we couldn't find a match when not in inverse mode, it's a failure
-			if (!set->is_inverse) RETURN_FAILURE();
-			match_len = 1;
-
-			const ssize_t tail_len = rx_match_token(token + 1, count - 1, chr + 1, matches, depth + 1);
-
-			if (MATCHED(tail_len)) RETURN_SUCCESS(match_len + tail_len);
-			else RETURN_FAILURE();
+			// if we couldn't find a match in inverse mode, it's a success, and in normal mode, a failure
+			CHECK_SINGLE_CHAR(set->is_inverse);
 		}
 
 		/* ———————————————————————————————————————————————————— */
@@ -256,13 +242,7 @@ static inline ssize_t rx_match_token(const token_t *const token, const ssize_t c
 		case RXT_RANGE: {
 			const RxRangeToken *const range = (RxRangeToken*)token->value;
 			// simply check whether a character is between the two sides of the range
-			if (!(range->lhs <= *chr && *chr <= range->rhs)) RETURN_FAILURE();
-			match_len = 1;
-
-			const ssize_t tail_len = rx_match_token(token + 1, count - 1, chr + 1, matches, depth + 1);
-
-			if (MATCHED(tail_len)) RETURN_SUCCESS(match_len + tail_len);
-			else RETURN_FAILURE();
+			CHECK_SINGLE_CHAR(range->lhs <= *chr && *chr <= range->rhs);
 		}
 
 		/* ———————————————————————————————————————————————————— */
@@ -271,7 +251,7 @@ static inline ssize_t rx_match_token(const token_t *const token, const ssize_t c
 			// this should only ever be accessed directly when the entire regex is empty
 			//	each token should have its own way of dealing with `RXT_EMPTY` cases
 			warning("accessed `RXT_EMPTY` directly");
-			RETURN_SUCCESS(true);
+			CHECK_SINGLE_CHAR(true);
 		}
 
 		/* ———————————————————————————————————————————————————— */
