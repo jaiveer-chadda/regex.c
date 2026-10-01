@@ -30,11 +30,18 @@ matches_t rx_match(const rxobj_t rx_obj, const char *const string) {
 	matches_t matches = {
 		// allocate memory for the captured string of each of the capturing groups
 		.captures = calloc(rx_obj->capture_count, sizeof(char*)),
+		// and note down the number of captures there should be
 		.num_cap = rx_obj->capture_count,
+
+		// initialise an empty match array
+		.arr = NULL, .len = 0,
+
+		// and copy a reference to the string that we're matching,
+		//	so that once we have the matches, we know what their contents are
 		.string = string,
-		.arr = NULL,
-		.len = 0,
 	};
+
+	/* ———————————————————————————————————————————————————— */
 
 	// iterate through the test string, trying to find a match starting from each character
 	for (const char *chr = string; *chr != '\0'; chr++) {
@@ -52,9 +59,19 @@ matches_t rx_match(const rxobj_t rx_obj, const char *const string) {
 		// add match to `matches` array
 		matches.arr[matches.len++] = (match_t){ .idx = (size_t)(chr - string), .len = match_len };
 
+		/* ———————————————————————————————————————————————————— */
+
+		// the match should never have gone past the end of the string
+		assert(match_len <= (ssize_t)strnlen(chr, match_len));
+
 		// increment the char pointer by the match len, so we don't get overlapping matches 
 		chr += (intptr_t)match_len - 1;
+
+		// make sure that the char pointer is always moved forward by at least one every time
+		if (match_len == 0) chr++; // this prevents an infinite number of zero-width matches
 	}
+
+	/* ———————————————————————————————————————————————————— */
 
 	return matches;
 }
@@ -65,11 +82,11 @@ static inline ssize_t rx_match_tokens(
 	const RxTokens tokens, const char *chr, matches_t *const matches, const int depth
 ) {
 	const char *const start = chr;
-	size_t ti = 0;
 
 	/* ———————————————————————————————————————————————————— */
 
-	while (*chr != '\0') {
+	// iterate through all the tokens - only exit if we run out of tokens, or if one of the tokens doesn't match
+	for (size_t ti = 0; ti < tokens.len; ti++) {
 		const token_t token = tokens.arr[ti];
 
 		// check if this character can be matched by this token
@@ -80,19 +97,13 @@ static inline ssize_t rx_match_tokens(
 
 		/* ———————————————————————————————————————————————————— */
 
-		// if the match was successful, increment the character pointer by
+		// if the match was successful, increment the character pointer by the number of chars matched
 		chr += (intptr_t)match_len;
-
-		// if we've matched something, increment `ti` so that we can test the next char against the next token
-		// if we've reached the end of the tokens, we've found a match, so break and return
-		if (++ti == tokens.len) break;
 	}
 
 	/* ———————————————————————————————————————————————————— */
 
-	// ensure that the match has been completed - i.e., all tokens have been parsed
-	if (ti != tokens.len) return -1;
-	// if all tokens _have_ been parsed, then calculate the match's length and return
+	// once all tokens have been parsed, calculate the match's length, and return
 	return (ssize_t)(chr - start);
 }
 
@@ -118,11 +129,9 @@ static inline ssize_t rx_match_tokens(
 static inline ssize_t rx_match_token(const token_t token, const char *chr, matches_t *const matches, const int depth) {
 	ssize_t match_len = -1;
 
-	if (*chr == '\0') RETURN_FAILURE();
+	/* ———————————————————————————————————————————————————— */
 
 	switch (token.type) {
-
-		/* ———————————————————————————————————————————————————— */
 
 		case RXT_LITERAL: RETURN_BOOL(*chr == (char)token.value);
 		case RXT_CLASS	: RETURN_BOOL(rx_match_class(token.value, *chr));
@@ -162,6 +171,9 @@ static inline ssize_t rx_match_token(const token_t token, const char *chr, match
 					//	then there's nothing to be done - break out of the loop, and return the match's length
 					break;
 				}
+
+				// check that moving the pointer forward won't move it past the end of the string
+				if (match_len > (ssize_t)strnlen(pchar, match_len)) RETURN_FAILURE();
 
 				pchar += match_len; // move the char pointer forward by the length of the match
 			}

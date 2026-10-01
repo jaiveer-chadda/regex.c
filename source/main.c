@@ -29,14 +29,20 @@
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 // const char REGEX[] = "^[-\\w]+|[0-9]*@\\w+?.(?<group>Mail|male|meal\\))\\b(\\.(\\x40e)?[a-z]{2,}){1,3}$";
-const char REGEX[] = "([a-z]+)(\\d)?";
+// const char REGEX[] = "([a-z]+)(\\d)?";
+const char REGEX[] = "a?0?";
+// const char REGEX[] = "[a-z]?";
 // const char REGEX[] = "a()5";
 
 const char INPUTS[][64] = {
+	"a",
+	"a ",
+	"a0",
+	// "a5",
 	// "0 ",
 	// "12345",
 	// "xxabc",
-	"  12a45",
+	// "  12a45",
 	// "a5",
 	// "12abc34def5",
 	// "12abc3p0def5",
