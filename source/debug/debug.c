@@ -24,9 +24,9 @@ static const LogLevel LOG_LEVELS[] = { LOG_LEVEL_TABLE };
 #define MATCHED(len) ((len) != -1L)
 
 static ssize_t CHR_IDX = -1;
+static const char *STRING_START = NULL;
 
 void d__match(const char *const str, const token_t *token, const char *const chr, const ssize_t len, const int depth) {
-	static const char *STRING_START = NULL;
 	if (str != NULL) { STRING_START = str; return; }
 
 	const bool same = (CHR_IDX == chr - STRING_START);
@@ -34,7 +34,7 @@ void d__match(const char *const str, const token_t *token, const char *const chr
 
 	/* ———————————————————————————————————————————————————————————————————— */
 
-	eprintf( TAB
+	eprintf( TAB // prefix, i.e. `[3] <5>`
 		ANSI8(%d) D("[") "%ld" D("]") RESET " "
 		ANSI8(%d) D("<") "%d"  D(">") RESET,
 
@@ -44,13 +44,24 @@ void d__match(const char *const str, const token_t *token, const char *const chr
 
 	/* ———————————————————————————————————————————————————————————————————— */
 
-	eprintf("%s  ", MATCHED(len) ? "\33[32m" : "\33[31m");
-	if (same) eputs("   "); else eprintf(D("'") "%c" D("'"), *chr);
+	eprintf("%s  ", MATCHED(len) ? "\33[32m" : "\33[31m"); // purely colour
 
-	for (int i = 0; i < MAX_DEPTH - depth; i++) eputs(TAB);
+	// print the char that we're trying to match
+	if (same) eputs("   ");
+	else {
+		eputs(D("'"));
+		eputs(
+			*chr == '\0' ? "∅" :
+			*chr == ' '	 ? "·" :
+			(char[2]){ *chr }
+		);
+		eputs(D("'"));
+	}
 
-	eputs("\33[2m————\33[m ");
-	eprint_token(*token);
+	for (int i = 0; i < MAX_DEPTH - depth; i++) eputs(TAB); // indentation
+
+	eputs("\33[2m————\33[m "); // line
+	eprint_token(*token); // token
 
 	/* ———————————————————————————————————————————————————————————————————— */
 
@@ -65,22 +76,25 @@ void d__match_len(const char *const chr, const ssize_t match_len) {
 
 	if (!MATCHED(match_len)) {
 		eprintf(
-			"\33[31mno match\33[m"
-			" from "
+			"\33[31mno match "
+			ANSI8(%d) D("[") "%ld"D("]") RESET " "
 			"\33[92m" D("'") "%c" D("'")
 			"\33[m\n",
 
+			GET_COL(chr - STRING_START)	, chr - STRING_START,
 			*chr
 		);
 		return;
 	}
 
 	eprintf(
-		"\33[32mmatched\33[92m"
-		SP D("'") "%.*s"	D("'") "\33[m"
+		"\33[32mmatched  "
+		ANSI8(%d) D("[") "%ld"D("]") RESET " "
+		"\33[92m" D("'") "%.*s"	D("'") "\33[m"
 		SP D("(") "len %zd"	D(")")
 		"\n",
 
+		GET_COL(chr - STRING_START)	, chr - STRING_START,
 		(int)match_len, chr, match_len
 	);
 }
@@ -157,4 +171,4 @@ void d__stacktrace(void) {
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-// spell:ignoreRegexp /(\\(?:[␛e]|0?33|[xUu]1[Bb])|␛)\[[0-9;]*?m\B/g
+// spell:ignoreRegexp /(\\(?:[␛e]|0?33|[xUu]1[Bb])|␛)\[[0-9;]*?m\B|LNNO/g
