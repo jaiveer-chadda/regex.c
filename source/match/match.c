@@ -182,18 +182,20 @@ static inline ssize_t rx_match_token(const token_t *const token, const ssize_t c
 		/* ———————————————————————————————————————————————————— */
 
 		case RXT_OR: {
-			//r)NOT WORKING
 			const RxOrToken *const or_sects = (RxOrToken*)token->value;
 
 			// iterate through each of the sections in the 'or' object
 			for (size_t i = 0; i < or_sects->count; i++) {
-				const RxTokens section = or_sects->sections[i];
+				// match the section against its own tokens first
+				match_len = rx_match_token(SPREAD_TOKS(or_sects->sections[i]), chr, matches, depth + 1);
+				if (!MATCHED(match_len)) continue;
 
-				// for empty 'or' sects `(|...)` short-circuit the matching func, and return a match w/ a length of 1
-				if (IS_EMPTY(section)) RETURN_SUCCESS(true);
+				// then check if the tokens after this, all match
+				const ssize_t tail_len = rx_match_token(token + 1, count - 1, chr + match_len, matches, depth + 1);
 
-				match_len = rx_match_token(SPREAD_TOKS(section), chr, matches, depth + 1);
-				if (MATCHED(match_len)) RETURN_SUCCESS();
+				// if they do, return success
+				if (MATCHED(tail_len)) RETURN_SUCCESS(match_len + tail_len);
+				// if not, keep checking the rest of the sections
 			}
 
 			RETURN_FAILURE(); // none of the 'or' sections matched
