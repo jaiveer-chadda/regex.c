@@ -13,6 +13,18 @@
 #define DIM ANSI("2")
 #define D(str) DIM str ANSI("22")
 
+// #define COLOURS ((unsigned[]){ 203, 215, 220, 227, 191, 155, 84, 86, 81, 75, 105, 141, 177, 213, 211 })
+#define COLOURS ((unsigned[]){ 203, 215, 227, 155, 86, 75, 141, 213})
+#define COL_COUNT ((int)(sizeof(COLOURS) / sizeof(COLOURS[0])))
+
+#define GET_COL(idx) (COLOURS[(idx) % COL_COUNT])
+
+/* ———————————————————————————————————————————— */
+
+#define MAX_DEPTH 8
+
+/* ———————————————————————————————————————————— */
+
 #define REL_PATH(file) (char *)(strstr((char *)(file), "source/") + (int)strlen("source/"))
 
 /* ———————————————————————————————————————————— */

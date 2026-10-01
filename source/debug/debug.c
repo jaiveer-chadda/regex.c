@@ -23,25 +23,31 @@ static const LogLevel LOG_LEVELS[] = { LOG_LEVEL_TABLE };
 #define TAB "  "
 #define MATCHED(len) ((len) != -1L)
 
+static ssize_t CHR_IDX = -1;
+
 void d__match(const char *const str, const token_t *token, const char *const chr, const ssize_t len, const int depth) {
 	static const char *STRING_START = NULL;
-	static ssize_t idx = -1;
-
 	if (str != NULL) { STRING_START = str; return; }
 
-	const bool same = (idx == chr - STRING_START);
-	idx = chr - STRING_START;
+	const bool same = (CHR_IDX == chr - STRING_START);
+	CHR_IDX = chr - STRING_START;
 
 	/* ———————————————————————————————————————————————————————————————————— */
 
-	eprintf(TAB D("[") "%ld" D("] <") "%d" D(">"), chr - STRING_START, depth);
+	eprintf( TAB
+		ANSI8(%d) D("[") "%ld" D("]") RESET " "
+		ANSI8(%d) D("<") "%d"  D(">") RESET,
+
+		GET_COL(chr - STRING_START)	, chr - STRING_START,
+		GET_COL(depth - 1)			, depth
+	);
 
 	/* ———————————————————————————————————————————————————————————————————— */
 
 	eprintf("%s  ", MATCHED(len) ? "\33[32m" : "\33[31m");
 	if (same) eputs("   "); else eprintf(D("'") "%c" D("'"), *chr);
 
-	for (int i = 0; i < 8 - depth; i++) eputs(TAB);
+	for (int i = 0; i < MAX_DEPTH - depth; i++) eputs(TAB);
 
 	eputs("\33[2m————\33[m ");
 	eprint_token(*token);
@@ -54,10 +60,22 @@ void d__match(const char *const str, const token_t *token, const char *const chr
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 void d__match_len(const char *const chr, const ssize_t match_len) {
-	if (!MATCHED(match_len)) return;
+	CHR_IDX = -1;
+	eputs(TAB TAB);
+
+	if (!MATCHED(match_len)) {
+		eprintf(
+			"\33[31mno match\33[m"
+			" from "
+			"\33[92m" D("'") "%c" D("'")
+			"\33[m\n",
+
+			*chr
+		);
+		return;
+	}
 
 	eprintf(
-		TAB TAB
 		"\33[32mmatched\33[92m"
 		SP D("'") "%.*s"	D("'") "\33[m"
 		SP D("(") "len %zd"	D(")")
