@@ -3,6 +3,8 @@
 #ifndef PRINT_H_
 #define PRINT_H_
 
+#include <stdio.h>
+
 #include "match/match.h"
 #include "parsing/parse.h"
 
