@@ -94,7 +94,7 @@ matches_t rx_match(const rxobj_t rx_obj, const char *const string) {
 
 /* ———————————————————————————————————————————————————— */
 
-#define MATCH_NEXT_TOKEN(inc_chr) match_token(token + 1, count - 1, (chr + (inc_chr)), matches, depth + 1)
+#define MATCH_NEXT_TOKEN(inc_chr) match_token(token + 1, count - 1, (chr + (intptr_t)(inc_chr)), matches, depth + 1)
 
 #define RETURN_SINGLE_CHAR(test_case) do {																\
 	/* if it doesn't match, then there's nothing more to do */											\
@@ -141,31 +141,42 @@ static inline ssize_t match_token(const token_t *const token, const ssize_t coun
 		/* ———————————————————————————————————————————————————— */
 
 		case RXT_QUANT: {
-			error_not_implemented(); //r)NOT IMPLEMENTED
 			const RxQuantToken *const quant = (RxQuantToken*)token->value;
-			const char *const start = chr, *pchar = chr;
+			size_t alloc_count = quant->lhs + 1, rep_count = 0;
 
-			// try and match the token the maximum number of times specified by the quantifier
-			size_t count = 0;
-			for (; count < quant->rhs; count++) {
-				const ssize_t match_len = -1 /* match_token(quant->repeat, pchar, matches, depth + 1) */;
+			size_t *lengths = calloc(alloc_count, sizeof(size_t));
+			const char *pchar = chr;
 
-				// if at any point it fails to match, break
+			// greedily match up to `quant->rhs` repetitions and record lengths
+			while (rep_count < quant->rhs) {
+				// try to match a single repetition
+				const ssize_t match_len = match_token(&quant->repeat, 1, pchar, matches, depth + 1);
 				if (!MATCHED(match_len)) break;
 
-				// check that moving the pointer forward won't move it past the end of the string
-				if (match_len > (ssize_t)strnlen(pchar, match_len)) BACKTRACK();
+				pchar += match_len;
 
-				pchar += match_len; // move the char pointer forward by the length of the match
+				REALLOC_FOR(lengths, rep_count, alloc_count, char*);
+				lengths[++rep_count] = (size_t)(pchar - chr);
 			}
 
 			// check if we're still within the bounds of the minimum repetition count (the lhs)
 			//	if we are, then we haven't done enough iterations - return failure
-			if (count < quant->lhs) BACKTRACK();
+			if (rep_count < quant->lhs) { free(lengths); BACKTRACK(); }
 
-			// if, however, we're trying to match something _after_ we've passed the minimum rep count
-			//	then there's nothing to be done - just return the match's length
-			RETURN(pchar - start); // return the number of chars that were (successfully) parsed
+			// try matching the remaining tokens from max count down to min count
+			for (ssize_t i = rep_count; i >= (ssize_t)quant->lhs; i--) {
+				const ssize_t tail_len = MATCH_NEXT_TOKEN(lengths[i]);
+
+				if (MATCHED(tail_len)) {
+					const ssize_t total_len = lengths[i] + tail_len;
+
+					free(lengths);
+					RETURN(total_len);
+				}
+			}
+
+			free(lengths);
+			BACKTRACK();
 		}
 
 		/* ———————————————————————————————————————————————————— */
