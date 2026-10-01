@@ -159,18 +159,12 @@ static inline ssize_t rx_match_token(const token_t token, const char *chr, match
 			const char *const start = chr, *pchar = chr;
 
 			// try and match the token the maximum number of times specified by the quantifier
-			for (size_t count = 0; count < quant->rhs; count++) {
+			size_t count = 0;
+			for (; count < quant->rhs; count++) {
 				match_len = rx_match_token(quant->repeat, pchar, matches, depth + 1);
 
-				// if at any point it fails to match...
-				if (!MATCHED(match_len)) {
-					// check if we're still within the bounds of the minimum repetition count (the lhs)
-					//	if we are, then we haven't done enough iterations - return failure
-					if (count < quant->lhs) RETURN_FAILURE();
-					// if, however, we're trying to match something _after_ we've passed the minimum rep count
-					//	then there's nothing to be done - break out of the loop, and return the match's length
-					break;
-				}
+				// if at any point it fails to match, break
+				if (!MATCHED(match_len)) break;
 
 				// check that moving the pointer forward won't move it past the end of the string
 				if (match_len > (ssize_t)strnlen(pchar, match_len)) RETURN_FAILURE();
@@ -178,6 +172,12 @@ static inline ssize_t rx_match_token(const token_t token, const char *chr, match
 				pchar += match_len; // move the char pointer forward by the length of the match
 			}
 
+			// check if we're still within the bounds of the minimum repetition count (the lhs)
+			//	if we are, then we haven't done enough iterations - return failure
+			if (count < quant->lhs) RETURN_FAILURE();
+
+			// if, however, we're trying to match something _after_ we've passed the minimum rep count
+			//	then there's nothing to be done - just return the match's length
 			RETURN_SUCCESS(pchar - start); // return the number of chars that were (successfully) parsed
 		}
 
