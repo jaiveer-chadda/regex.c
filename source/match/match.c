@@ -195,23 +195,32 @@ static inline ssize_t match_token(const token_t *const token, const ssize_t coun
 		/* ———————————————————————————————————————————————————— */
 
 		case RXT_GROUP: {
-			error_not_implemented(); //r)NOT IMPLEMENTED
 			const RxGroupToken *const group = (RxGroupToken*)token->value;
 
-			const ssize_t match_len = (
-				// if the group is empty, short-circuit the `match_token` function, setting the length to 0
-				IS_EMPTY(group->tokens) ? 0
-				// otherwise, find the match & its length as normal
-				: match_token(SPREAD_TOKS(group->tokens), TOKEN_MATCH_PARAMS)
-			);
+			char **const capt_str = &matches->captures[group->id.idx];
+			// save the current capture, in case this match fails
+			char *const saved_capt = *capt_str;
 
-			if (MATCHED(match_len)) { // if we didn't find a match, don't capture anything
-				// copy the match into the `captures` array, assigning it to the index of this group
-				//	also, allocate one more byte than the match's length, so `calloc` can include a nullbyte at the end
-				matches->captures[group->id.idx] = memcpy(calloc(1, match_len + 1), chr, match_len);
+			// try and match the group's contents, and get its length, as normal
+			const ssize_t match_len = match_token(SPREAD_TOKS(group->tokens), TOKEN_MATCH_PARAMS);
+			if (!MATCHED(match_len)) BACKTRACK();
+
+			// provisionally copy the match into the `captures` array, assigning it to the index of this group
+			//	also, allocate one more byte than the match's length, so `calloc` can include a nullbyte at the end
+			*capt_str = (char*) memcpy(calloc(1, match_len + 1), chr, match_len);
+
+			// try to match all the following tokens
+			const ssize_t tail_len = MATCH_NEXT_TOKEN(match_len);
+
+			if (!MATCHED(tail_len)) {
+				// free the failed provisional allocation, restore the saved capture, and backtrack
+				free(*capt_str);
+				*capt_str = saved_capt;
+	
+				BACKTRACK();
 			}
 
-			RETURN(match_len);
+			RETURN(match_len + tail_len);
 		}
 
 		/* ———————————————————————————————————————————————————— */
