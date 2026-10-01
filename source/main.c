@@ -4,6 +4,7 @@
 
 #include "types/types.h"
 #include "match/match.h"
+#include "debug/debug.h"
 #include "output/print.h"
 #include "parsing/parse.h"
 
@@ -11,20 +12,6 @@
 #pragma clang diagnostic ignored "-Wunused-variable"
 #pragma clang diagnostic ignored "-Wunused-function"
 #pragma clang diagnostic ignored "-Wunused-parameter"
-
-/* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
-
-#ifdef DEBUG_MODE
-#	define DEBUG_INPUT(i) do {										\
-		printf("\33[40m[input %zu] = '\33[4m", i);					\
-		for (const char *chr = INPUTS[i]; *chr != '\0'; chr++) {	\
-			printf("%s", (*chr == ' ' ? "·" : (char[2]){ *chr }));	\
-		}															\
-		puts("\33[24m'\33[m");										\
-	} while (0)
-#else
-#	define DEBUG_INPUT(i) (void)i
-#endif
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 

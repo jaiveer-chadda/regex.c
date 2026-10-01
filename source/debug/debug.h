@@ -72,6 +72,16 @@ typedef struct {
 #	define dline__DISPATCH(_1, NAME, ...) NAME
 #	define dline(...) dline__DISPATCH(__VA_ARGS__ __VA_OPT__(,) arg1__dline, arg0__dline)(__VA_ARGS__)
 
+	/* ————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
+
+#	define DEBUG_INPUT(i) do {										\
+		printf("\33[40m[input %zu] = '\33[4m", i);					\
+		for (const char *chr = INPUTS[i]; *chr != '\0'; chr++) {	\
+			printf("%s", (*chr == ' ' ? "·" : (char[2]){ *chr }));	\
+		}															\
+		puts("\33[24m'\33[m");										\
+	} while (0)
+
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 #else /* !DEBUG_MODE */
@@ -88,6 +98,7 @@ typedef struct {
 #	define dmatch(token, chr, mlen, depth)
 #	define dmatch_init(start)
 #	define dmatch_len(chr, len)
+#	define DEBUG_INPUT(i)
 #endif /* DEBUG_MODE */
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
