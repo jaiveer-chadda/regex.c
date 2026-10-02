@@ -15,12 +15,9 @@
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-// FIXME: segfault during parsing when regex is empty  ""
-// FIXME: regex showing up as `∅` when its length is 1 "a"
-
-const char REGEX[] = "abc(12*[a-z\\s])*?";
+const char REGEX[] = "a";
 const char INPUTS[][64] = {
-	"abc123",
+	"b",
 	"ab c",
 	" abc ",
 

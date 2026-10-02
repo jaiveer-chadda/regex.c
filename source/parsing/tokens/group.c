@@ -138,7 +138,7 @@ token_t rx_tokenise_group(const char **const chr, const rxobj_t rx_obj) {
 	/* ———————————————————————————————————————————————————— */
 
 	// tokenise the contents of the group and set the group's type
-	group->tokens = rx_tokenise_sections(chr, rx_obj, ')');
+	group->tokens = rx_tokenise_sections(chr, rx_obj, ')', false);
 	group->type = type;
 
 	// set the group's capturing index, which is agnostic to whether it's a named or numbered group

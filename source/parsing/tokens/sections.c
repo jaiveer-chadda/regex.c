@@ -7,24 +7,27 @@
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-RxTokens rx_tokenise_sections(const char **const chr, const rxobj_t rx_obj, const char end_chr) {
+RxTokens rx_tokenise_sections(const char **const chr, const rxobj_t rx_obj, const char end_chr, const bool is_root) {
 	size_t t_alloc_count = 0;
 	RxTokens tokens = { .arr = NULL, .len = 0 };
 
 	size_t sec_alloc_count = 0;
 	RxOrToken *or_token = NULL;
 
-	static bool adjusted = false;
+	// defining `is_first = is_root` is a shorthand to say that we only care about `is_first` if `is_root` is true
+	bool is_first = is_root;
 
-	while (*(++(*chr)) != '\0' && **chr != ')') {
-
+	while (true) {
 		// this is a special exception that only applies to the very first character parsed in a regex
 		//	since I've created the convention that a character is incremented before it's dereferenced,
 		//	this function will fail to read the very first character of a regex string, as it'll start on the second
 		//	character instead.
 		// I've genuinely tried everything to solve it in a less 'hack-y' way, but this seems to be the best solution
-		if (!adjusted && *chr == rx_obj->string) (*chr)--;
-		adjusted = true;
+		if (!is_first) (*chr)++;
+		is_first = false;
+
+		// now do the checks that would usually be done in the `while (...)` clause
+		if (**chr == '\0' || **chr == ')') break;
 
 		/* ———————————————————————————————————————————————————— */
 

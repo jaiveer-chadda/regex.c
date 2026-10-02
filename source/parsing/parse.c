@@ -40,7 +40,7 @@ static inline rxobj_t rx_init(const char *const string, const uint64_t flags) {
 
 static inline void rx_tokenise(const rxobj_t rx_obj) {
 	const char **const chr = &rx_obj->string;
-	rx_obj->tokens = rx_tokenise_sections(chr, rx_obj, '\0');
+	rx_obj->tokens = rx_tokenise_sections(chr, rx_obj, '\0', true);
 }
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
