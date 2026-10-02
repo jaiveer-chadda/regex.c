@@ -15,7 +15,10 @@
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-const char REGEX[] = "abc";
+// FIXME: segfault during parsing when regex is empty  ""
+// FIXME: regex showing up as `∅` when its length is 1 "a"
+
+const char REGEX[] = "bc";
 const char INPUTS[][64] = {
 	"abc",
 	"ab c",
@@ -24,6 +27,7 @@ const char INPUTS[][64] = {
 	// "aabc",
 	// "a",
 	// "a ",
+	// "aaa",
 	// "a0",
 	// "a5",
 	// "0 ",

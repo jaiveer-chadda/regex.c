@@ -153,10 +153,8 @@ static inline ssize_t match_token(const token_t *const token, const ssize_t coun
 				const ssize_t match_len = match_token(&quant->repeat, 1, pchar, matches, depth + 1);
 				if (!MATCHED(match_len)) break;
 
-				pchar += match_len;
-
-				REALLOC_FOR(lengths, rep_count, alloc_count, char*);
-				lengths[++rep_count] = (size_t)(pchar - chr);
+				REALLOC_FOR(lengths, rep_count + 1, alloc_count, char*);
+				lengths[++rep_count] = (size_t)(( pchar += match_len ) - chr);
 			}
 
 			// check if we're still within the bounds of the minimum repetition count (the lhs)
@@ -268,10 +266,6 @@ static inline ssize_t match_token(const token_t *const token, const ssize_t coun
 		/* ———————————————————————————————————————————————————— */
 
 		case RXT_EMPTY: {
-			// this should only ever be accessed directly when the entire regex is empty
-			//	each token should have its own way of dealing with `RXT_EMPTY` cases
-			warning("accessed `RXT_EMPTY` directly");
-
 			// increment the token for the next match, but not the character pointer
 			const ssize_t tail_len = MATCH_NEXT_TOKEN(0);
 
