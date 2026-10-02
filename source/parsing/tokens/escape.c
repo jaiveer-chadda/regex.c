@@ -34,11 +34,12 @@ token_t rx_tokenise_escape(const char **const chr) {
 
 		// set up backreferences with a reference to their name
 		[[fallthrough]]; // \1 -> \9
-		case RXX_1: case RXX_2: case RXX_3: case RXX_4: case RXX_5: case RXX_6: case RXX_7: case RXX_8: case RXX_9:
+		case RXX_1: case RXX_2: case RXX_3: case RXX_4: case RXX_5: case RXX_6: case RXX_7: case RXX_8: case RXX_9: {
 			groupid_t *const groupref = calloc(1, sizeof(groupid_t));
 			*groupref = (groupid_t){ .type = GIDT_INT, .id = CHR_TO_INT(**chr) };
 
 			RETURN_TOKEN(RXT_BACKREF, groupref);
+		}
 
 		/* ———————————————————————————————————————————————————— */
 
@@ -52,18 +53,19 @@ token_t rx_tokenise_escape(const char **const chr) {
 		/* ———————————————————————————————————————————————————— */
 
 		// map control characters (usually written as `^Y`) from their `\cY` notation, to their literal interpretations
-		case RXX_CONTROL: // \c
+		case RXX_CONTROL: { // \c
 			(*chr)++; // increment the char pointer, so we're looking at the character after `\c`
 			// make sure the control character escape is a valid one (`?`, or between `@` and `_`)
 			if (!(**chr == '?' || ('@' <= **chr && **chr <= '_'))) error_invalid_escape();
 			// `\c?` / `^?` (delete) is a special exception, so hardcode that character in
 			//	for the rest of the escapes, they're defined sequentially, starting at `^@` for the literal `\0`
 			RETURN_TOKEN(RXT_LITERAL, **chr == '?' ? '\x7f' : **chr - '@');
+		}
 
 		/* ———————————————————————————————————————————————————— */
 
 		// the `\x` escape is a multi-character escape, so needs to be specially parsed.
-		case RXX_HEXESC: // \x
+		case RXX_HEXESC: { // \x
 			wchar_t hex_buf = 0;
 			uint8_t num_iter = 0;
 
@@ -91,13 +93,15 @@ token_t rx_tokenise_escape(const char **const chr) {
 
 			// return the character, whose integer value we just calculated, as a literal
 			RETURN_TOKEN(RXT_LITERAL, hex_buf);
+		}
 
 		/* ———————————————————————————————————————————————————— */
 
 		/// @todo implement
 		[[fallthrough]]; // \K \g \k \p \P
-		case RXX_RESETPOS: case RXX_NTHGROUP: case RXX_NAMEDGRP: case RXX_PROPERTY: case RXX_NOPROPERTY:
+		case RXX_RESETPOS: case RXX_NTHGROUP: case RXX_NAMEDGRP: case RXX_PROPERTY: case RXX_NOPROPERTY: {
 			error_not_implemented();
+		}
 
 		/* ———————————————————————————————————————————————————— */
 

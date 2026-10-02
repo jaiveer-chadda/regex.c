@@ -17,13 +17,16 @@ token_t rx_tokenise_quant(const char **const chr) {
 
 	// translate each of the quantifier types into their `{n,m}` equivalents
 	switch (**chr) {
+
+		/* ———————————————————————————————————————————————————— */
+
 		case '?': size[0] = 0, size[1] = 1	; break; // {0,1}
 		case '*': size[0] = 0, size[1] = INF; break; // {0,∞}
 		case '+': size[0] = 1, size[1] = INF; break; // {1,∞}
 
 		/* ———————————————————————————————————————————————————— */
 
-		case '{':
+		case '{': {
 			// iterate through each char, adding its value to the total until we reach a non-digit
 			while (chr_is_dig(*(++(*chr)))) size[0] = (size[0] * 10) + CHR_TO_INT(**chr);
 
@@ -40,9 +43,9 @@ token_t rx_tokenise_quant(const char **const chr) {
 			// if the char isn't a closing brace, or if `m` is smaller than `n` (given `{n,m}`), the quant is invalid
 			if (**chr != '}' || size[0] > size[1]) error_invalid_quant();
 			break;
+		}
 
-		default:
-			error_impossible_case();
+		default: error_impossible_case();
 	}
 
 	/* ———————————————————————————————————————————————————— */

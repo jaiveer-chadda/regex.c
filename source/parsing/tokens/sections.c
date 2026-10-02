@@ -41,7 +41,7 @@ RxTokens rx_tokenise_sections(const char **const chr, const rxobj_t rx_obj, cons
 		/* ———————————————————————————————————————————————————— */
 
 		switch (token.type) {
-			case RXT_OR:
+			case RXT_OR: {
 				// firstly, initialise the `RXT_OR` token if it doesn't already exist
 				if (or_token == NULL) or_token = calloc(1, sizeof(RxOrToken));
 
@@ -63,11 +63,13 @@ RxTokens rx_tokenise_sections(const char **const chr, const rxobj_t rx_obj, cons
 
 				// then reset all information about the `tokens` array, so it can start being filled again
 				t_alloc_count = 0, tokens = (RxTokens){0};
+
 				break;
+			}
 
 			/* ———————————————————————————————————————————————————— */
 
-			case RXT_QUANT:
+			case RXT_QUANT: {
 				// make sure this isn't the first token in the array
 				if (tokens.len == 0) error_nothing_to_repeat();
 
@@ -90,14 +92,17 @@ RxTokens rx_tokenise_sections(const char **const chr, const rxobj_t rx_obj, cons
 				// finally, overwrite the previous token with the new quantifier token
 				//	there's no need to increment the count, since the total length hasn't changed
 				tokens.arr[tokens.len - 1] = token;
+
 				break;
+			}
 
 			/* ———————————————————————————————————————————————————— */
 
-			default:
+			default: {
 				// if the token isn't a special case, then simply add whichever token was found to the `tokens` array
 				tokens.arr[tokens.len++] = token;
 				break;
+			}
 		}
 
 		/* ———————————————————————————————————————————————————— */

@@ -13,7 +13,7 @@
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-#define X(name, ...) [LOG_##name] = { #name, __VA_ARGS__ }, 
+#define X(name, ...) [LOG_##name] = { #name, __VA_ARGS__ },
 static const LogLevel LOG_LEVELS[] = { LOG_LEVEL_TABLE };
 #undef X
 
@@ -166,7 +166,7 @@ void d__stacktrace(void) {
 
 	PERR("%s function call stack (depth: %d) %s\n", "────────", trace_size, "────────");
 	for (int i = 1; i < trace_size; i++) PERR("[%d] %s\n", i - 1, symbols[i]);
-	dline(); 
+	dline();
 
 	free(symbols);
 }

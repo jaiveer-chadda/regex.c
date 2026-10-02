@@ -59,7 +59,6 @@ token_t rx_tokenise_char(const char **const chr, const rxobj_t rx_obj) {
 			error_general();
 
 		case '.': RETURN_TOKEN(RXT_CLASS, '.');
-
 		case '|': RETURN_TOKEN(RXT_OR, NA);
 
 		case '(': return rx_tokenise_group(chr, rx_obj);

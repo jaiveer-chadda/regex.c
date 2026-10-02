@@ -15,11 +15,21 @@
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-const char REGEX[] = "a";
+const char REGEX[] = "([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})";
 const char INPUTS[][64] = {
-	"b",
-	"ab c",
-	" abc ",
+	"some-email@",
+	// "plainaddress",
+	"jane.doe+test@co.uk",
+	// "@domain.com",
+	// "user@example.com",
+	// "user@domain",
+	// "sales@business.net",
+	// "user@",
+	// "hello@world.org",
+	// "user.name@example.com",
+	// "john.doe@company.co.uk",
+	// "alex_123@sub.domain.org",
+	// "@missingusername.com",
 
 	// "aabc",
 	// "a",

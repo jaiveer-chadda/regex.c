@@ -225,7 +225,7 @@ static inline ssize_t match_token(const token_t *const token, const ssize_t coun
 				// free the failed provisional allocation, restore the saved capture, and backtrack
 				free(*capt_str);
 				*capt_str = saved_capt;
-	
+
 				BACKTRACK();
 			}
 

@@ -151,7 +151,10 @@ token_t rx_tokenise_group(const char **const chr, const rxobj_t rx_obj) {
 
 static inline RxGroup rx_get_group_type(const char **const chr) {
 	switch (*(++(*chr))) {
-		case '?':
+
+		/* ———————————————————————————————————————————————————— */
+
+		case '?': {
 			switch (*(++(*chr))) {
 				case ':': return RXG_NON_CAPT; // (?:...)
 				case '#': return RXG_COMMENT ; // (?#...)
@@ -162,20 +165,22 @@ static inline RxGroup rx_get_group_type(const char **const chr) {
 				case '!': return RXG_PLB	 ; // (?!...)
 				case'\'': return RXG_NAMED	 ; // (?'name'...)
 				case 'P': return RXG_NAMED	 ; // (?P<name>...)
-				case '<':
+				case '<': {
 					switch (*(++(*chr))) {
 						case '*': return RXG_NAPLB; // (?<*...)
 						case '=': return RXG_PLB  ; // (?<=...)
 						case '!': return RXG_NLB  ; // (?<!...)
 						default	: return RXG_NAMED; // (?<name>...)
 					}
+				}
 
 				default: return RXG_FLAGS; // (?flags:...)
 			}
+		}
 
 		/* ———————————————————————————————————————————————————— */
 
-		case '*': // (*iden:...)
+		case '*': { // (*iden:...)
 			// note down where the identifier starts
 			const char *const iden_start = (*chr) + 1;
 
@@ -199,6 +204,7 @@ static inline RxGroup rx_get_group_type(const char **const chr) {
 			}
 
 			error_invalid_group_type();
+		}
 
 		/* ———————————————————————————————————————————————————— */
 
