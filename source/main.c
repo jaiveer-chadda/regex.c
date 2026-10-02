@@ -18,9 +18,9 @@
 // FIXME: segfault during parsing when regex is empty  ""
 // FIXME: regex showing up as `∅` when its length is 1 "a"
 
-const char REGEX[] = "bc";
+const char REGEX[] = "abc(12*[a-z\\s])*?";
 const char INPUTS[][64] = {
-	"abc",
+	"abc123",
 	"ab c",
 	" abc ",
 
@@ -49,8 +49,6 @@ int main(const int argc, const char *const argv[]) {
 
 	const rxobj_t regex = rx_compile(REGEX, RX_FLAGS[RXF_GLOBAL].bf | RX_FLAGS[RXF_MULTILINE].bf);
 
-	fputs("regex = ", stdout); print_regex(regex); putchar('\n');
-
 	for (size_t i = 0; i < sizeof(INPUTS) / sizeof(INPUTS[0]); i++) {
 		DEBUG_INPUT(i);
 
@@ -58,6 +56,7 @@ int main(const int argc, const char *const argv[]) {
 		rx_print_matches(matches);
 	}
 
+	dline(60);
 	return 0;
 }
 

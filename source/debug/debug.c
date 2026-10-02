@@ -23,6 +23,11 @@ static const LogLevel LOG_LEVELS[] = { LOG_LEVEL_TABLE };
 #define TAB "  "
 #define MATCHED(len) ((len) != -1L)
 
+#define GET_CHAR(chr_)		\
+	(chr_) == '\0'	? "∅" :	\
+	(chr_) == ' '	? "·" :	\
+	(char[2]){ (chr_) }
+
 static ssize_t CHR_IDX = -1;
 static const char *STRING_START = NULL;
 
@@ -50,15 +55,12 @@ void d__match(const char *const str, const token_t *token, const char *const chr
 	if (same) eputs("   ");
 	else {
 		eputs(D("'"));
-		eputs(
-			*chr == '\0' ? "∅" :
-			*chr == ' '	 ? "·" :
-			(char[2]){ *chr }
-		);
+		eputs(GET_CHAR(*chr));
 		eputs(D("'"));
 	}
 
-	for (int i = 0; i < MAX_DEPTH - depth; i++) eputs(TAB); // indentation
+	for (int i = 0; i < 6	 ; i++) eputs(TAB); // basic indentation
+	for (int i = 0; i < depth; i++) eputs(TAB); // tiered indentation
 
 	eputs("\33[2m————\33[m "); // line
 	eprint_token(*token); // token
@@ -76,19 +78,19 @@ void d__match_len(const char *const chr, const ssize_t match_len) {
 
 	if (!MATCHED(match_len)) {
 		eprintf(
-			"\33[31mno match "
+			"\33[91mno match "
 			ANSI8(%d) D("[") "%ld"D("]") RESET " "
-			"\33[92m" D("'") "%c" D("'")
+			"\33[92m" D("'") "%s" D("'")
 			"\33[m\n",
 
 			GET_COL(chr - STRING_START)	, chr - STRING_START,
-			*chr
+			GET_CHAR(*chr)
 		);
 		return;
 	}
 
 	eprintf(
-		"\33[32mmatched  "
+		"\33[92mmatched  "
 		ANSI8(%d) D("[") "%ld"D("]") RESET " "
 		"\33[92m" D("'") "%.*s"	D("'") "\33[m"
 		SP D("(") "len %zd"	D(")")

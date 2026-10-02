@@ -18,7 +18,7 @@ static inline void rx_print_match(const match_t match, const char *const string)
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 void rx_print_matches(const matches_t matches) {
-	printf("'\33[38;5;194m%s"RESET"' (%zu match%s)\n", matches.string, matches.len, matches.len == 1 ? "" : "es");
+	printf("\n'\33[38;5;194m%s"RESET"' (%zu match%s)\n", matches.string, matches.len, matches.len == 1 ? "" : "es");
 
 	for (size_t i = 0; i < matches.len; i++) {
 		rx_print_match(matches.arr[i], matches.string);
@@ -29,8 +29,7 @@ void rx_print_matches(const matches_t matches) {
 		if (capture == NULL) continue;
 		printf("group [%zu] = '%s'\n", i, capture);
 	}
-
-	putchar('\n');
+	// putchar('\n');
 }
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
