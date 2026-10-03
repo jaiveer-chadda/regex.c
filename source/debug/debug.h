@@ -97,10 +97,10 @@ typedef struct {
 #	define	 error(...)
 #	define	 fatal(...)
 #	define	 dline(...)
-#	define dmatch(token, chr, mlen, depth)
-#	define dmatch_init(start)
-#	define dmatch_len(chr, len)
-#	define DEBUG_INPUT(i)
+#	define dmatch(token, chr, mlen, depth)	(void)(token), (void)(chr), (void)(mlen), (void)(depth)
+#	define dmatch_len(pchar, len)			(void)(pchar), (void)(len)
+#	define dmatch_init(start)				(void)(start)
+#	define DEBUG_INPUT(i)					(void)(i)
 #endif /* DEBUG_MODE */
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */

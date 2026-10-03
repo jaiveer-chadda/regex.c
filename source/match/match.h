@@ -20,7 +20,7 @@ typedef struct matches_s {
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-matches_t rx_match(const rxobj_t rx_obj, const char *const string);
+matches_t rx_match(const rxobj_t rx_obj, const char *const str);
 bool rx_match_class(const char class, const char chr);
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */

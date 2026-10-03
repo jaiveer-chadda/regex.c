@@ -15,12 +15,13 @@
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-const char REGEX[] = "abc(12*[a-z\\s])*?";
+const char REGEX[] = "a*a";
 const char INPUTS[][64] = {
 	"abc",
-	"abc123",
-	"ab c",
-	" abc ",
+	"aaaa",
+	// "abc123",
+	// "ab c",
+	// " abc ",
 
 	// "some-email@",
 	// "plainaddress",

@@ -27,8 +27,8 @@ static inline ssize_t match_token(const token_t *const token, const ssize_t coun
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-matches_t rx_match(const rxobj_t rx_obj, const char *const string) {
-	dmatch_init(string);
+matches_t rx_match(const rxobj_t rx_obj, const char *const str) {
+	dmatch_init(str);
 
 	size_t alloc_count = 0;
 	matches_t matches = {
@@ -42,17 +42,15 @@ matches_t rx_match(const rxobj_t rx_obj, const char *const string) {
 
 		// and copy a reference to the string that we're matching,
 		//	so that once we have the matches, we know what their contents are
-		.string = string, .str_len = strlen(string),
+		.string = str, .str_len = strlen(str),
 	};
 
 	/* ———————————————————————————————————————————————————— */
 
 	// iterate through the test string, trying to find a match starting from each character
 	for (size_t idx = 0; idx < matches.str_len; idx++) {
-		const char *const chr = string + idx;
-
 		const ssize_t match_len = match_token(SPREAD_TOKS(rx_obj->tokens), idx, &matches, 0);
-		dmatch_len(chr, match_len);
+		dmatch_len(str + idx, match_len);
 
 		// if we didn't find a match, then move on, and start trying to find a match starting from the next character
 		if (!MATCHED(match_len)) continue;
@@ -68,12 +66,12 @@ matches_t rx_match(const rxobj_t rx_obj, const char *const string) {
 		/* ———————————————————————————————————————————————————— */
 
 		// the match should never have gone past the end of the string
-		assert(match_len <= (ssize_t)strnlen(chr, match_len));
+		assert(idx + match_len <= matches.str_len);
 
-		// increment the index by the match len (-1 cos of the `for ... idx++`), so we don't get overlapping matches
+		// increment the index by the match len, so we don't get overlapping matches
 		//	but also make sure that `idx` isn't ever decremented - this prevents an infinite number of 0-width matches
-		//	(note: in the case of a 0-width match, `idx` will be incremented by 1, again, cos of the `idx++`)
-		idx += MAX(0, match_len - 1);
+		//	-1 at the end, since `idx` will be incremented by 1 anyways, cos of the `for ... idx++`
+		idx += MAX(1, match_len) - 1;
 	}
 
 	/* ———————————————————————————————————————————————————— */
@@ -85,7 +83,7 @@ matches_t rx_match(const rxobj_t rx_obj, const char *const string) {
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 #ifdef DEBUG_MODE
-#	define RETURN(val) do { if (count >= 1) dmatch(token, chr, (val), depth); return (val); } while (0)
+#	define RETURN(val) do { if (count >= 1) dmatch(token, &str[idx], (val), depth);	return (val); } while (0)
 #else
 #	define RETURN(val) return (val)
 #endif
@@ -114,7 +112,7 @@ matches_t rx_match(const rxobj_t rx_obj, const char *const string) {
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 static inline ssize_t match_token(const token_t *const token, const ssize_t count, TOKEN_MATCH_ARGS) {
-	const char *const chr = matches->string + idx;
+	const char *const str = matches->string;
 
 	if (count ==  0) RETURN( 0);
 	if (count == -1) RETURN(-1);
@@ -123,8 +121,8 @@ static inline ssize_t match_token(const token_t *const token, const ssize_t coun
 
 	switch (token->type) {
 
-		case RXT_LITERAL: RETURN_SINGLE_CHAR(*chr == (char)token->value);
-		case RXT_CLASS	: RETURN_SINGLE_CHAR(rx_match_class(token->value, *chr));
+		case RXT_LITERAL: RETURN_SINGLE_CHAR(str[idx] == (char)token->value);
+		case RXT_CLASS	: RETURN_SINGLE_CHAR(rx_match_class(token->value, str[idx]));
 
 		/* ———————————————————————————————————————————————————— */
 
@@ -230,7 +228,7 @@ static inline ssize_t match_token(const token_t *const token, const ssize_t coun
 
 			// provisionally copy the match into the `captures` array, assigning it to the index of this group
 			//	also, allocate one more byte than the match's length, so `calloc` can include a nullbyte at the end
-			*capt_str = (char*) memcpy(calloc(1, match_len + 1), chr, match_len);
+			*capt_str = (char*) memcpy(calloc(1, match_len + 1), &str[idx], match_len);
 
 			// try to match all the following tokens
 			const ssize_t tail_len = MATCH_NEXT_TOKEN(match_len);
@@ -256,7 +254,7 @@ static inline ssize_t match_token(const token_t *const token, const ssize_t coun
 			for (size_t i = 0; i < set->tokens.len; i++) {
 				const token_t *const set_token = &set->tokens.arr[i];
 
-				// first, try and match `chr` against the current set token
+				// first, try and match the current char (`str[idx]`) against the current set token
 				const ssize_t match_len = match_token(set_token, 1, TOKEN_MATCH_PARAMS);
 
 				// if we found a match, mark the character as being in the set, and break
@@ -274,7 +272,7 @@ static inline ssize_t match_token(const token_t *const token, const ssize_t coun
 		case RXT_RANGE: {
 			const RxRangeToken *const range = (RxRangeToken*)token->value;
 			// simply check whether a character is between the two sides of the range
-			RETURN_SINGLE_CHAR(range->lhs <= *chr && *chr <= range->rhs);
+			RETURN_SINGLE_CHAR(range->lhs <= str[idx] && str[idx] <= range->rhs);
 		}
 
 		/* ———————————————————————————————————————————————————— */
