@@ -144,8 +144,11 @@ static inline ssize_t match_token(const token_t *const token, const ssize_t coun
 
 		case RXT_QUANT: {
 			const RxQuantToken *const quant = (RxQuantToken*)token->value;
+			// initialise `alloc_count` to `quant->lhs`, since in an ideal world, that'll be the minimum number of
+			//	iterations that we do
 			size_t alloc_count = quant->lhs + 1, rep_count = 0;
 
+			// create an array to hold the lengths of each match, so that we can backtrack
 			size_t *lengths = calloc(alloc_count, sizeof(size_t));
 			size_t q_idx = idx;
 
@@ -153,9 +156,12 @@ static inline ssize_t match_token(const token_t *const token, const ssize_t coun
 			while (rep_count < quant->rhs) {
 				// try to match a single repetition
 				const ssize_t match_len = match_token(&quant->repeat, 1, q_idx, matches, depth + 1);
+				// as soon as a repetition doesn't match, break the loop, and check whether we made it far enough
 				if (!MATCHED(match_len)) break;
 
+				// if this repetition _did_ match, however, then allocate space for another length in the `lengths` arr
 				REALLOC_FOR(lengths, rep_count + 1, alloc_count, char*);
+				// then increment the index by the length of the match, add it to the array, and start looking again
 				lengths[++rep_count] = (size_t)(( q_idx += match_len ) - idx);
 			}
 
@@ -164,10 +170,15 @@ static inline ssize_t match_token(const token_t *const token, const ssize_t coun
 			if (rep_count < quant->lhs) { free(lengths); BACKTRACK(); }
 
 			// try matching the remaining tokens from max count down to min count
+			//	they're being backtracked to in reverse order, cos we're being greedy, so we try and match the largest
+			//	count that we can, before trying to match anything smaller
 			for (ssize_t i = rep_count; i >= (ssize_t)quant->lhs; i--) {
+				// matching against `lengths[i]` means matching `lengths[i]` characters after the `idx` that was
+				//	passed to this function
 				const ssize_t tail_len = MATCH_NEXT_TOKEN(lengths[i]);
 
 				if (MATCHED(tail_len)) {
+					// save the return length here before the `lengths` array is freed
 					const ssize_t total_len = lengths[i] + tail_len;
 
 					free(lengths);
@@ -175,6 +186,7 @@ static inline ssize_t match_token(const token_t *const token, const ssize_t coun
 				}
 			}
 
+			// if none of the iterations managed to work, then we really do have to backtrack to before the quantifier
 			free(lengths);
 			BACKTRACK();
 		}
