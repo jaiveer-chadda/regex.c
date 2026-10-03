@@ -13,9 +13,9 @@ typedef struct match_s { size_t idx, len; } match_t;
 
 typedef struct matches_s {
 	const char *const string;
-	match_t *arr;
-	size_t len, num_cap;
 	char **const captures;
+	match_t *arr;
+	size_t len, num_cap, str_len;
 } matches_t;
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
