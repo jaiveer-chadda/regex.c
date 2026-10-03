@@ -25,9 +25,9 @@ static const LogLevel LOG_LEVELS[] = { LOG_LEVEL_TABLE };
 #define TAB "  "
 #define MATCHED(len) ((len) != -1L)
 
-#define GET_CHAR(chr_)		\
-	(chr_) == '\0'	? "∅" :	\
-	(chr_) == ' '	? "·" :	\
+#define GET_CHAR(chr_)						\
+	(chr_) == '\0'	? "\33[90m∅\33[92m" :	\
+	(chr_) == ' '	? "·" :					\
 	(char[2]){ (chr_) }
 
 #define STRING ((char*)(MATCHES->string))
@@ -37,9 +37,7 @@ static const matches_t *MATCHES	= NULL;
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-void dmatch(const matches_t *matches, const token_t *token, const size_t idx, const ssize_t len, const int depth) {
-	const bool same = ((size_t)CHR_IDX == idx);
-
+void dmatch_enter(const matches_t *matches, const token_t *token, const size_t idx, const int depth) {
 	MATCHES = matches;
 	CHR_IDX = idx;
 
@@ -55,19 +53,39 @@ void dmatch(const matches_t *matches, const token_t *token, const size_t idx, co
 
 	/* ———————————————————————————————————————————————————————————————————— */
 
-	eprintf("%s  ", MATCHED(len) ? "\33[32m" : "\33[31m"); // purely colour
-
 	// print the char that we're trying to match
-	if (same) eputs("   ");
-	else {
-		eputs(D("'")); eputs(GET_CHAR(STRING[idx])); eputs(D("'"));
-	}
+	eputs(TAB "\33[92m");
+	eputs(D("'")); eputs(GET_CHAR(STRING[idx])); eputs(D("'"));
 
 	for (int i = 0; i < 6	 ; i++) eputs(TAB); // basic indentation
 	for (int i = 0; i < depth; i++) eputs(TAB); // tiered indentation
 
-	eputs("\33[2m————\33[m "); // line
+	eputs("\33[33;2m————\33[m "); // line
 	eprint_token(*token); // token
+
+	/* ———————————————————————————————————————————————————————————————————— */
+
+	eputc('\n');
+}
+
+void dmatch_return(const token_t *token, const size_t idx, const ssize_t len, const int depth) {
+	eprintf( TAB // prefix, i.e. `[3] <5>`
+		ANSI8(%d) D("[") "%2ld"	D("]") RESET " "
+		ANSI8(%d) D("<") "%d"	D(">") RESET,
+		GET_COL(idx), idx,
+		GET_COL(depth), depth
+	);
+
+	/* ———————————————————————————————————————————————————————————————————— */
+
+	// spacing to align with the char printed in `dmatch_enter`
+	eputs(TAB TAB " ");
+
+	for (int i = 0; i < 6	 ; i++) eputs(TAB); // basic indentation
+	for (int i = 0; i < depth; i++) eputs(TAB); // tiered indentation
+
+	eprintf("\33[2;%dm————\33[m ", MATCHED(len) ? 32 : 31); // line
+	eprint_token(*token);
 
 	/* ———————————————————————————————————————————————————————————————————— */
 

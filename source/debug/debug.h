@@ -39,7 +39,9 @@ typedef struct {
 	void stacktrace(void);
 	void d__line(const uint8_t len);
 
-	void dmatch(const matches_t *matches, const token_t *token, const size_t idx, const ssize_t len, const int depth);
+	void dmatch_enter(const matches_t *matches, const token_t *token, const size_t idx, const int depth);
+	void dmatch_return(const token_t *token, const size_t idx, const ssize_t len, const int depth);
+
 	void dmatch_len(const size_t idx, const ssize_t match_len);
 
 	/* ————————————————————————————————————————————————————————————————————————————————————————————————————————————— */

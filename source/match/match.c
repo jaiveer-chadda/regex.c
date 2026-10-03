@@ -81,8 +81,10 @@ matches_t rx_match(const rxobj_t rx_obj, const char *const str) {
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 #ifdef DEBUG_MODE
-#	define RETURN(val) do { if (count >= 1) dmatch(matches, token, idx, (val), depth); return (val); } while (0)
+#	define ENTER_MATCH() dmatch_enter(matches, token, idx, depth)
+#	define RETURN(val) do { if (count >= 1) dmatch_return(token, idx, (val), depth + 1); return (val); } while (0)
 #else
+#	define ENTER_MATCH()
 #	define RETURN(val) return (val)
 #endif
 
@@ -110,6 +112,8 @@ static inline ssize_t match_token(const token_t *const token, const ssize_t coun
 
 	if (count ==  0) RETURN( 0);
 	if (count == -1) RETURN(-1);
+
+	ENTER_MATCH();
 
 	/* ———————————————————————————————————————————————————— */
 
