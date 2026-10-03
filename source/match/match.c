@@ -128,7 +128,78 @@ static inline ssize_t match_token(const token_t *const token, const ssize_t coun
 
 		case RXT_ANCHOR: {
 			const char anchor = (char)token->value;
-			error_not_implemented(); (void)anchor;
+			bool success = false;
+
+			switch (anchor) {
+
+				/* ——————————————————————————————————————— */
+
+				/// @todo implement multiline flag
+				#define FLAG_ACTIVE(flag) false // temp
+
+				case '^': {
+					// if we're in multiline mode, then first check whether the previous char was a newline
+					if (FLAG_ACTIVE(MULTILINE) && str[idx-1] == '\n') { success = true; break; }
+					// if the prev char wasn't a newline, or we're not in multiline mode, then fallthrough to
+					//	checking if the char is at the start of the string
+					else; [[fallthrough]];
+				}
+
+				// this case handles (and behaves identically for):
+				//	- the `\A`case
+				//	- the `^` case, when not in multiline mode
+				//	- the `^` case, if the previous character wasn't a newline
+				case RXX_STRSTART: { // \A
+					success = (idx == 0);
+					break;
+				}
+
+				/* ——————————————————————————————————————— */
+
+				case '$': {
+					if (FLAG_ACTIVE(MULTILINE) && str[idx+1] == '\n') { success = true; break; }
+					else; [[fallthrough]];
+				}
+
+				case RXX_STREND: { // \z
+					success = (idx == matches->str_len);
+					break;
+				}
+
+				/* ——————————————————————————————————————— */
+
+				case RXX_SEQUENCE: { // \G
+					error_not_implemented();
+				}
+
+				case RXX_STRENDNL: { // \Z
+					// check either that we're at the end of the string,
+					//	or that there's a single newline before the end
+					success = (
+						(idx == matches->str_len) ||
+						(idx == matches->str_len - 1 && str[idx] == '\n')
+					);
+					break;
+				}
+
+				/* ——————————————————————————————————————— */
+
+				case RXX_BOUNDARY: { // \b
+					error_not_implemented();
+				}
+
+				case RXX_NOBOUND: { // \B
+					error_not_implemented();
+				}
+
+				/* ——————————————————————————————————————— */
+
+				default: error_impossible_case();
+			}
+
+			// note: since anchors are always 0-width matches, we don't need to advance the char index
+			if (success) return MATCH_NEXT_TOKEN(0);
+			else BACKTRACK();
 		}
 
 		/* ———————————————————————————————————————————————————— */
