@@ -94,19 +94,15 @@ matches_t rx_match(const rxobj_t rx_obj, const char *const str) {
 
 #define MATCH_NEXT_TOKEN(inc_chr) match_token(token + 1, count - 1, idx + (inc_chr), matches, depth + 1)
 
-#define RETURN_SINGLE_CHAR(test_case) do {																\
-	/* if it doesn't match, then there's nothing more to do */											\
-	/*	therefore we've failed this branch, and we now have to backtrack (de-recurse) */				\
-	if (idx >= matches->str_len || !(test_case)) BACKTRACK();											\
-	const ssize_t match_len = 1; /* we matched, and by definition, the length of a single char is 1 */	\
-	/*	(yes, ik that defining a constant to only use twice is verbose, but this is clearer to me) */	\
-	\
-	/* now that we've matched this token, check that all the tokens after it also matches */			\
-	const ssize_t tail_len = MATCH_NEXT_TOKEN(match_len);												\
-	\
-	/* if it does, then return (our length + its length) */												\
-	if (MATCHED(tail_len)) RETURN(match_len + tail_len);												\
-	else BACKTRACK(); /* and if not, then just return failure as usual */								\
+#define RETURN_N_CHARS(len_if_match, test_case) do {										\
+	/* if it doesn't match, then there's nothing more to do */								\
+	/*	therefore we've failed this branch, and we now have to backtrack (de-recurse) */	\
+	if (idx >= matches->str_len || !(test_case)) BACKTRACK();								\
+	/* now that we've matched this token, check that all the tokens after it also match */	\
+	const ssize_t tail_len = MATCH_NEXT_TOKEN((len_if_match));								\
+	/* if it does, then return (our length + its length) */									\
+	if (MATCHED(tail_len)) RETURN((len_if_match) + tail_len);								\
+	else BACKTRACK(); /* and if not, then just return failure as usual */					\
 } while (0)
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
@@ -121,87 +117,9 @@ static inline ssize_t match_token(const token_t *const token, const ssize_t coun
 
 	switch (token->type) {
 
-		case RXT_LITERAL: RETURN_SINGLE_CHAR(str[idx] == (char)token->value);
-		case RXT_CLASS	: RETURN_SINGLE_CHAR(rx_match_class(token->value, str[idx]));
-
-		/* ———————————————————————————————————————————————————— */
-
-		case RXT_ANCHOR: {
-			const char anchor = (char)token->value;
-			const size_t str_len = matches->str_len;
-			bool success = false;
-
-			switch (anchor) {
-
-				/* ——————————————————————————————————————— */
-
-				/// @todo implement multiline flag
-				#define FLAG_ACTIVE(flag) false // temp
-
-				case '^': {
-					// if we're in multiline mode, then first check whether the previous char was a newline
-					if (FLAG_ACTIVE(MULTILINE) && str[idx-1] == '\n') { success = true; break; }
-					// if the prev char wasn't a newline, or we're not in multiline mode, then fallthrough to
-					//	checking if the char is at the start of the string
-					else; [[fallthrough]];
-				}
-
-				// this case handles (and behaves identically for):
-				//	- the `\A`case
-				//	- the `^` case, when not in multiline mode
-				//	- the `^` case, if the previous character wasn't a newline
-				case RXX_STRSTART: { // \A
-					success = (idx == 0);
-					break;
-				}
-
-				/* ——————————————————————————————————————— */
-
-				case '$': {
-					if (FLAG_ACTIVE(MULTILINE) && str[idx+1] == '\n') { success = true; break; }
-					else; [[fallthrough]];
-				}
-
-				case RXX_STREND: success = (idx == str_len); break; // \z
-
-				/* ——————————————————————————————————————— */
-
-				case RXX_SEQUENCE: { // \G
-					error_not_implemented();
-				}
-
-				case RXX_STRENDNL: { // \Z
-					// check either that we're at the end of the string,
-					//	or that there's a single newline before the end
-					success = (
-						(idx == str_len) ||
-						(idx == str_len - 1 && str[idx] == '\n')
-					);
-					break;
-				}
-
-				/* ——————————————————————————————————————— */
-
-				[[fallthrough]]; case RXX_BOUNDARY: case RXX_NOBOUND: {
-					const bool is_prev_wordc = (idx != 0	  ) && IS_WORDC(str[idx-1]);
-					const bool is_curr_wordc = (idx != str_len) && IS_WORDC(str[idx	 ]);
-
-					const bool is_boundary = (is_prev_wordc != is_curr_wordc);
-					const bool needs_bound = (anchor == RXX_BOUNDARY);
-
-					success = (is_boundary == needs_bound);
-					break;
-				}
-
-				/* ——————————————————————————————————————— */
-
-				default: error_impossible_case();
-			}
-
-			// note: since anchors are always 0-width matches, we don't need to advance the char index
-			if (success) return MATCH_NEXT_TOKEN(0);
-			else BACKTRACK();
-		}
+		case RXT_LITERAL: RETURN_N_CHARS(1, str[idx] == (char)token->value);
+		case RXT_CLASS	: RETURN_N_CHARS(1, rx_match_class(token->value, str[idx]));
+		case RXT_ANCHOR	: RETURN_N_CHARS(0, rx_match_anchor(token->value, idx, matches));
 
 		/* ———————————————————————————————————————————————————— */
 
@@ -360,7 +278,7 @@ static inline ssize_t match_token(const token_t *const token, const ssize_t coun
 			// if we couldn't find a match in inverse mode, it's a success, and in normal mode, a failure
 			//	so, in inverse mode, flip the result of the for loop
 			if (set->is_inverse) did_match = !did_match;
-			RETURN_SINGLE_CHAR(did_match);
+			RETURN_N_CHARS(1, did_match);
 		}
 
 		/* ———————————————————————————————————————————————————— */
@@ -368,7 +286,7 @@ static inline ssize_t match_token(const token_t *const token, const ssize_t coun
 		case RXT_RANGE: {
 			const RxRangeToken *const range = (RxRangeToken*)token->value;
 			// simply check whether a character is between the two sides of the range
-			RETURN_SINGLE_CHAR(range->lhs <= str[idx] && str[idx] <= range->rhs);
+			RETURN_N_CHARS(1, range->lhs <= str[idx] && str[idx] <= range->rhs);
 		}
 
 		/* ———————————————————————————————————————————————————— */
