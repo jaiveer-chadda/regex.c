@@ -32,11 +32,46 @@ token_t rx_tokenise_escape(const char **const chr) {
 
 		/* ———————————————————————————————————————————————————— */
 
-		// set up backreferences with a reference to their name
+		// set up numbered backreferences with a reference to their indices
 		[[fallthrough]]; // \1 -> \9
 		case RXX_1: case RXX_2: case RXX_3: case RXX_4: case RXX_5: case RXX_6: case RXX_7: case RXX_8: case RXX_9: {
 			groupid_t *const groupref = calloc(1, sizeof(groupid_t));
 			*groupref = (groupid_t){ .type = GIDT_INT, .id = CHR_TO_INT(**chr) };
+
+			RETURN_TOKEN(RXT_BACKREF, groupref);
+		}
+
+		/* ———————————————————————————————————————————————————— */
+
+		// named backreferences
+		case RXX_NAMEDGRP: { // \k<name> / \k{name} / \k'name'
+			// find the char that'll be used to terminate the groupname
+			char term_char = '\0';
+			switch (*(++(*chr))) {
+				case '<' : term_char = '>' ; break;
+				case '{' : term_char = '}' ; break;
+				case '\'': term_char = '\''; break;
+				default	 : error_invalid_escape();
+			}
+
+			char *name = NULL;
+			size_t len = 0, alloc = 0;
+
+			while (*(++(*chr)) != '\0' && **chr != term_char) {
+				REALLOC_FOR(name, len, alloc, char);
+				name[len++] = **chr;
+			}
+
+			if (len == 0 || **chr == '\0') {
+				if (name != NULL) free(name);
+				error_invalid_escape();
+			}
+
+			REALLOC_FOR(name, len, alloc, char);
+			name[len] = '\0';
+
+			groupid_t *const groupref = calloc(1, sizeof(groupid_t));
+			*groupref = (groupid_t){ .type = GIDT_STR, .id = (any_t)name };
 
 			RETURN_TOKEN(RXT_BACKREF, groupref);
 		}
@@ -82,7 +117,7 @@ token_t rx_tokenise_escape(const char **const chr) {
 				else break; // not a hex digit
 			}
 
-			// if the escape was just `\x`, without anything after it, then throw an error
+			// if the escape was just `\x` or `\x{}`, without anything after it, then throw an error
 			if (num_iter == 0) error_invalid_escape();
 			if (is_long) {
 				// long escapes must end with a closing brace
@@ -98,8 +133,8 @@ token_t rx_tokenise_escape(const char **const chr) {
 		/* ———————————————————————————————————————————————————— */
 
 		/// @todo implement
-		[[fallthrough]]; // \K \g \k \p \P
-		case RXX_RESETPOS: case RXX_NTHGROUP: case RXX_NAMEDGRP: case RXX_PROPERTY: case RXX_NOPROPERTY: {
+		[[fallthrough]]; // \K \g \p \P
+		case RXX_RESETPOS: case RXX_NTHGROUP: case RXX_PROPERTY: case RXX_NOPROPERTY: {
 			error_not_implemented();
 		}
 
