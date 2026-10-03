@@ -25,7 +25,7 @@ void rx_print_matches(const matches_t matches) {
 	for (size_t i = 0; i < matches.num_cap; i++) {
 		const char *const capture = matches.captures[i];
 		if (capture == NULL) continue;
-		printf("group [%zu] = '%s'\n", i, capture);
+		printf("group [%zu] = '%s'\n", i + 1, capture);
 	}
 	// putchar('\n');
 }

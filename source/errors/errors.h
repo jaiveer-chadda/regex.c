@@ -10,6 +10,7 @@ void error_invalid_range(void);
 void error_invalid_escape(void);
 void error_impossible_case(void);
 void error_not_implemented(void);
+void error_invalid_backref(void);
 void error_unterminated_set(void);
 void error_nothing_to_repeat(void);
 void error_unterminated_group(void);

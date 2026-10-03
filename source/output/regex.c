@@ -88,7 +88,22 @@ void rx__print_token(const token_t token, const bool do_repr, FILE *const file) 
 		/* ———————————————————————————————————————————————————————————————————— */
 
 		CASE(RXT_BACKREF); {
-			fprint("\33[32m\\%d\33[m", (int)token.value);
+			const groupid_t *const backref = (groupid_t*)token.value;
+
+			putstr("\33[32m\\");
+
+			switch (backref->type) {
+				case GIDT_INT: fprint("%d",		  (int)backref->id); break;
+				case GIDT_STR: fprint("k<%s>",	(char*)backref->id); break;
+
+				[[fallthrough]]; case GIDT_INVALID: default: {
+					putstr("\33[m\nhuh?\n");
+					return;
+				}
+			}
+
+			putstr("\33[m");
+
 			break;
 		}
 

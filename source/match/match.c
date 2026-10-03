@@ -206,8 +206,32 @@ static inline ssize_t match_token(const token_t *const token, const ssize_t coun
 		/* ———————————————————————————————————————————————————— */
 
 		case RXT_BACKREF: {
-			const groupid_t *const groupref = (groupid_t*)token->value;
-			error_not_implemented(); (void)groupref;
+			const groupid_t *const backref = (groupid_t*)token->value;
+			const size_t grp_idx = backref->idx;
+
+			if (grp_idx > matches->len) error_invalid_backref();
+
+			// get the string that was captured by the referenced group
+			const char *const captured = matches->captures[grp_idx];
+			size_t match_idx = 0;
+
+			// iterate through the test string, starting from the current `idx`
+			// and through the captured string, starting from 0
+			//	stop when we go past the end of `str`, or when we reach the end of the matched string
+			while ((idx + match_idx < matches->str_len) && (str[idx + match_idx] != '\0')) {
+				match_idx++; // increment the iterator index
+				// if the captured string doesn't match the test string at this index, then return failure
+				if (str[idx + match_idx] != captured[match_idx]) BACKTRACK();
+				// otherwise, keep iterating until we reach the end of one of the strings
+			}
+
+			// now check that everything from here on matches
+			const ssize_t tail_len = MATCH_NEXT_TOKEN(match_idx);
+
+			// if it doesn't, return failure
+			if (!MATCHED(tail_len)) BACKTRACK();
+			// and if it does, return the total length of the match and the tail
+			RETURN(match_idx + tail_len);
 		}
 
 		/* ———————————————————————————————————————————————————— */
