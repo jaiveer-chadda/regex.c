@@ -9,6 +9,17 @@
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
+#define IN_RANGE(c, min, max) ((min) <= (c) && (c) <= (max))
+
+#define IS_LOWER(c) IN_RANGE(c, 'a', 'z')
+#define IS_UPPER(c) IN_RANGE(c, 'A', 'Z')
+#define IS_DIGIT(c) IN_RANGE(c, '0', '9')
+
+#define IS_WORDC(c) (IS_LOWER(c) || IS_UPPER(c) || IS_DIGIT(c) || c == '_')
+#define IS_SPACE(c) ((c) == ' ' || (c) == '\n' || (c) == '\t' || (c) == '\v' || (c) == '\f' || (c) == '\r')
+
+/* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
+
 typedef struct match_s { size_t idx, len; } match_t;
 
 typedef struct matches_s {

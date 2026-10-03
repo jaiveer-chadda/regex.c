@@ -128,6 +128,7 @@ static inline ssize_t match_token(const token_t *const token, const ssize_t coun
 
 		case RXT_ANCHOR: {
 			const char anchor = (char)token->value;
+			const size_t str_len = matches->str_len;
 			bool success = false;
 
 			switch (anchor) {
@@ -161,10 +162,7 @@ static inline ssize_t match_token(const token_t *const token, const ssize_t coun
 					else; [[fallthrough]];
 				}
 
-				case RXX_STREND: { // \z
-					success = (idx == matches->str_len);
-					break;
-				}
+				case RXX_STREND: success = (idx == str_len); break; // \z
 
 				/* ——————————————————————————————————————— */
 
@@ -176,20 +174,23 @@ static inline ssize_t match_token(const token_t *const token, const ssize_t coun
 					// check either that we're at the end of the string,
 					//	or that there's a single newline before the end
 					success = (
-						(idx == matches->str_len) ||
-						(idx == matches->str_len - 1 && str[idx] == '\n')
+						(idx == str_len) ||
+						(idx == str_len - 1 && str[idx] == '\n')
 					);
 					break;
 				}
 
 				/* ——————————————————————————————————————— */
 
-				case RXX_BOUNDARY: { // \b
-					error_not_implemented();
-				}
+				[[fallthrough]]; case RXX_BOUNDARY: case RXX_NOBOUND: {
+					const bool is_prev_wordc = (idx != 0	  ) && IS_WORDC(str[idx-1]);
+					const bool is_curr_wordc = (idx != str_len) && IS_WORDC(str[idx	 ]);
 
-				case RXX_NOBOUND: { // \B
-					error_not_implemented();
+					const bool is_boundary = (is_prev_wordc != is_curr_wordc);
+					const bool needs_bound = (anchor == RXX_BOUNDARY);
+
+					success = (is_boundary == needs_bound);
+					break;
 				}
 
 				/* ——————————————————————————————————————— */
