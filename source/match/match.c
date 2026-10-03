@@ -28,8 +28,6 @@ static inline ssize_t match_token(const token_t *const token, const ssize_t coun
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 matches_t rx_match(const rxobj_t rx_obj, const char *const str) {
-	dmatch_init(str);
-
 	size_t alloc_count = 0;
 	matches_t matches = {
 		// allocate memory for the captured string of each of the capturing groups
@@ -50,7 +48,7 @@ matches_t rx_match(const rxobj_t rx_obj, const char *const str) {
 	// iterate through the test string, trying to find a match starting from each character
 	for (size_t idx = 0; idx < matches.str_len; idx++) {
 		const ssize_t match_len = match_token(SPREAD_TOKS(rx_obj->tokens), idx, &matches, 0);
-		dmatch_len(str + idx, match_len);
+		dmatch_len(idx, match_len);
 
 		// if we didn't find a match, then move on, and start trying to find a match starting from the next character
 		if (!MATCHED(match_len)) continue;
@@ -83,7 +81,7 @@ matches_t rx_match(const rxobj_t rx_obj, const char *const str) {
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 #ifdef DEBUG_MODE
-#	define RETURN(val) do { if (count >= 1) dmatch(token, &str[idx], (val), depth);	return (val); } while (0)
+#	define RETURN(val) do { if (count >= 1) dmatch(matches, token, idx, (val), depth); return (val); } while (0)
 #else
 #	define RETURN(val) return (val)
 #endif
@@ -92,7 +90,7 @@ matches_t rx_match(const rxobj_t rx_obj, const char *const str) {
 
 /* ———————————————————————————————————————————————————— */
 
-#define MATCH_NEXT_TOKEN(inc_chr) match_token(token + 1, count - 1, idx + (inc_chr), matches, depth + 1)
+#define MATCH_NEXT_TOKEN(inc_chr) match_token(token + 1, count - 1, idx + (inc_chr), matches, depth)
 
 #define RETURN_N_CHARS(len_if_match, test_case) do {										\
 	/* if it doesn't match, then there's nothing more to do */								\

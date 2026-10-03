@@ -11,6 +11,8 @@
 
 #include "output/print.h"
 
+#ifdef DEBUG_MODE
+
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
 #define X(name, ...) [LOG_##name] = { #name, __VA_ARGS__ },
@@ -28,23 +30,27 @@ static const LogLevel LOG_LEVELS[] = { LOG_LEVEL_TABLE };
 	(chr_) == ' '	? "·" :	\
 	(char[2]){ (chr_) }
 
+#define STRING ((char*)(MATCHES->string))
+
 static ssize_t CHR_IDX = -1;
-static const char *STRING_START = NULL;
+static const matches_t *MATCHES	= NULL;
 
-void d__match(const char *const str, const token_t *token, const char *const chr, const ssize_t len, const int depth) {
-	if (str != NULL) { STRING_START = str; return; }
+/* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-	const bool same = (CHR_IDX == chr - STRING_START);
-	CHR_IDX = chr - STRING_START;
+void dmatch(const matches_t *matches, const token_t *token, const size_t idx, const ssize_t len, const int depth) {
+	const bool same = ((size_t)CHR_IDX == idx);
+
+	MATCHES = matches;
+	CHR_IDX = idx;
 
 	/* ———————————————————————————————————————————————————————————————————— */
 
 	eprintf( TAB // prefix, i.e. `[3] <5>`
-		ANSI8(%d) D("[") "%ld" D("]") RESET " "
-		ANSI8(%d) D("<") "%d"  D(">") RESET,
+		ANSI8(%d) D("[") "%2ld"	D("]") RESET " "
+		ANSI8(%d) D("<") "%d"	D(">") RESET,
 
-		GET_COL(chr - STRING_START)	, chr - STRING_START,
-		GET_COL(depth)				, depth
+		GET_COL(idx	 ), idx,
+		GET_COL(depth), depth
 	);
 
 	/* ———————————————————————————————————————————————————————————————————— */
@@ -54,9 +60,7 @@ void d__match(const char *const str, const token_t *token, const char *const chr
 	// print the char that we're trying to match
 	if (same) eputs("   ");
 	else {
-		eputs(D("'"));
-		eputs(GET_CHAR(*chr));
-		eputs(D("'"));
+		eputs(D("'")); eputs(GET_CHAR(STRING[idx])); eputs(D("'"));
 	}
 
 	for (int i = 0; i < 6	 ; i++) eputs(TAB); // basic indentation
@@ -72,7 +76,7 @@ void d__match(const char *const str, const token_t *token, const char *const chr
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-void d__match_len(const char *const chr, const ssize_t match_len) {
+void dmatch_len(const size_t idx, const ssize_t match_len) {
 	CHR_IDX = -1;
 	eputs(TAB TAB);
 
@@ -83,8 +87,8 @@ void d__match_len(const char *const chr, const ssize_t match_len) {
 			"\33[92m" D("'") "%s" D("'")
 			"\33[m\n",
 
-			GET_COL(chr - STRING_START)	, chr - STRING_START,
-			GET_CHAR(*chr)
+			GET_COL(idx), idx,
+			GET_CHAR(STRING[idx])
 		);
 		return;
 	}
@@ -96,8 +100,9 @@ void d__match_len(const char *const chr, const ssize_t match_len) {
 		SP D("(") "len %zd"	D(")")
 		"\n",
 
-		GET_COL(chr - STRING_START)	, chr - STRING_START,
-		(int)match_len, chr, match_len
+		GET_COL(idx), idx,
+		(int)match_len, &STRING[idx],
+		match_len
 	);
 }
 
@@ -152,7 +157,7 @@ void d__line(const uint8_t len) {
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
-void d__stacktrace(void) {
+void stacktrace(void) {
 	void *stack_buffer[STACK_MAX];
 
 	// get the current stack return addresses
@@ -172,5 +177,7 @@ void d__stacktrace(void) {
 }
 
 /* ————————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
+
+#endif /* !DEBUG_MODE */
 
 // spell:ignoreRegexp /(\\(?:[␛e]|0?33|[xUu]1[Bb])|␛)\[[0-9;]*?m\B|LNNO/g

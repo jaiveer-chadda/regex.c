@@ -26,6 +26,8 @@ typedef struct {
 #ifdef DEBUG_MODE
 
 #	include <inttypes.h>
+
+#	include "match/match.h"
 #	include "parsing/parse.h"
 
 	void d__debug(
@@ -34,12 +36,11 @@ typedef struct {
 		const char *const func, const char *const fmt, ...
 	);
 
-	void d__stacktrace(void);
+	void stacktrace(void);
 	void d__line(const uint8_t len);
 
-	void d__match(
-		const char *const str, const token_t *token, const char *const chr, const ssize_t len, const int depth);
-	void d__match_len(const char *const chr, const ssize_t match_len);
+	void dmatch(const matches_t *matches, const token_t *token, const size_t idx, const ssize_t len, const int depth);
+	void dmatch_len(const size_t idx, const ssize_t match_len);
 
 	/* ————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
@@ -51,11 +52,6 @@ typedef struct {
 #	define warning(...) dlog(WARNING, __VA_ARGS__)
 #	define	 error(...) dlog(ERROR	, __VA_ARGS__)
 #	define	 fatal(...) dlog(FATAL	, __VA_ARGS__)
-#	define stacktrace()			 d__stacktrace()
-
-#	define dmatch(token, chr, mlen, depth)	d__match(NULL, (token), (chr), (mlen), (depth))
-#	define dmatch_init(start)				d__match((start), NULL, NULL, -1, -1)
-#	define dmatch_len(chr, len)				d__match_len(chr, len)
 
 	/* ————————————————————————————————————————————————————————————————————————————————————————————————————————————— */
 
@@ -99,7 +95,6 @@ typedef struct {
 #	define	 dline(...)
 #	define dmatch(token, chr, mlen, depth)	(void)(token), (void)(chr), (void)(mlen), (void)(depth)
 #	define dmatch_len(pchar, len)			(void)(pchar), (void)(len)
-#	define dmatch_init(start)				(void)(start)
 #	define DEBUG_INPUT(i)					(void)(i)
 #endif /* DEBUG_MODE */
 
